@@ -24,19 +24,19 @@ export function Navbar() {
         className="fixed top-0 left-0 right-0 z-[100] transition-all duration-500"
         style={{
           background: scrolled
-            ? "rgba(8,8,10,0.8)"
-            : "rgba(8,8,10,0.4)",
+            ? "rgba(8,8,10,0.85)"
+            : "rgba(8,8,10,0.3)",
           borderBottom: scrolled
-            ? "1px solid var(--line-2)"
+            ? "1px solid var(--line)"
             : "1px solid transparent",
-          backdropFilter: scrolled ? "blur(20px)" : "blur(12px)",
+          backdropFilter: scrolled ? "blur(24px)" : "blur(8px)",
         }}
       >
-        <div className="max-w-7xl mx-auto px-[var(--pad)] flex items-center justify-between h-16">
+        <div className="max-w-7xl mx-auto px-[var(--pad)] flex items-center justify-between h-20">
           {/* Logo — editorial mark */}
           <Link
             href="/"
-            className="flex items-center gap-2 font-600 tracking-wide"
+            className="flex items-center gap-2 font-600 tracking-wide flex-shrink-0"
             style={{ color: "var(--ink)" }}
           >
             <div
@@ -45,44 +45,54 @@ export function Navbar() {
             >
               ⚡
             </div>
-            <span className="text-sm">ANITHIX</span>
+            <span className="text-sm hidden sm:inline">ANITHIX</span>
           </Link>
 
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1">
+          {/* Desktop nav — centered spacing */}
+          <nav className="hidden lg:flex items-center gap-8">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="px-4 py-2 text-sm font-500 transition-colors rounded-lg"
+                className="text-sm font-400 transition-all duration-300 relative"
                 style={{
-                  color: isActive(link.href) ? "var(--ink)" : "var(--ink-3)",
-                  background: isActive(link.href) ? "var(--line)" : "transparent",
+                  color: isActive(link.href) ? "var(--ink)" : "var(--ink-2)",
+                  letterSpacing: "0.3px",
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive(link.href)) {
                     e.currentTarget.style.color = "var(--ink)";
-                    e.currentTarget.style.background = "var(--line)";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive(link.href)) {
-                    e.currentTarget.style.color = "var(--ink-3)";
-                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "var(--ink-2)";
                   }
                 }}
               >
                 {link.label}
+                {isActive(link.href) && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: "-8px",
+                      left: 0,
+                      right: 0,
+                      height: "2px",
+                      background: "var(--accent)",
+                    }}
+                  />
+                )}
               </Link>
             ))}
           </nav>
 
           {/* CTA */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
             <Link
               href="/contact"
-              className="btn btn-solid"
-              style={{ background: "var(--accent)", color: "var(--bg)" }}
+              className="btn btn-solid px-6 py-2"
+              style={{ background: "var(--accent)", color: "var(--bg)", fontSize: "0.9rem" }}
             >
               Get in touch
             </Link>
@@ -90,7 +100,7 @@ export function Navbar() {
 
           {/* Mobile menu toggle */}
           <button
-            className="md:hidden p-2 transition-colors"
+            className="lg:hidden p-2 transition-colors"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
             style={{ color: "var(--ink-3)" }}
@@ -107,7 +117,7 @@ export function Navbar() {
         <nav
           className="mobile-menu open"
           style={{
-            top: "64px",
+            top: "80px",
             zIndex: 99,
           }}
         >
@@ -116,9 +126,11 @@ export function Navbar() {
               key={link.href}
               href={link.href}
               onClick={() => setMobileOpen(false)}
-              className="w-full text-left px-0 py-3 font-500 block"
+              className="w-full text-left px-0 py-4 font-400 block border-b"
               style={{
-                color: isActive(link.href) ? "var(--accent)" : "var(--ink)",
+                color: isActive(link.href) ? "var(--accent)" : "var(--ink-2)",
+                borderBottomColor: "var(--line)",
+                fontSize: "1rem",
               }}
             >
               {link.label}
@@ -127,7 +139,7 @@ export function Navbar() {
           <Link
             href="/contact"
             onClick={() => setMobileOpen(false)}
-            className="btn btn-solid w-full mt-4 block text-center"
+            className="btn btn-solid w-full mt-6 block text-center"
             style={{ background: "var(--accent)", color: "var(--bg)" }}
           >
             Get in touch

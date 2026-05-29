@@ -3,25 +3,28 @@
 import { useEffect, useRef } from "react";
 
 export function useReveal() {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    if (!ref.current) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            const reveals = entry.target.querySelectorAll(".reveal");
-            reveals.forEach((el) => {
-              el.classList.add("in");
-            });
-            observer.unobserve(entry.target);
+            entry.target.classList.add("in");
+          } else {
+            entry.target.classList.remove("in");
           }
         });
       },
-      { threshold: 0.1 }
+      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
     );
 
-    if (ref.current) {
+    const reveals = ref.current.querySelectorAll(".reveal");
+    reveals.forEach((el) => observer.observe(el));
+
+    if (ref.current.classList.contains("reveal")) {
       observer.observe(ref.current);
     }
 

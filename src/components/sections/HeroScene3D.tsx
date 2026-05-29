@@ -57,6 +57,7 @@ function Scene() {
     const pmrem = new THREE.PMREMGenerator(gl);
     pmrem.compileEquirectangularShader();
     const envRT = pmrem.fromEquirectangular(tex);
+    // eslint-disable-next-line react-hooks/immutability
     scene.environment = envRT.texture;
     tex.dispose();
     pmrem.dispose();
@@ -101,7 +102,7 @@ function Scene() {
 
     // Composition: offset right on wide screens
     const wide = window.innerWidth > 900;
-    const baseX = wide ? 2.05 : 0;
+    const baseX = wide ? 1.4 : 0;
     const baseY = wide ? 0.1 : 0.6;
     const baseS = wide ? 1 : 0.74;
 
@@ -200,7 +201,7 @@ function Scene() {
 export function HeroScene3D() {
   return (
     <Canvas
-      camera={{ position: [0, 0, 7.2], fov: 38 }}
+      camera={{ position: [0, 0, 8.5], fov: 38 }}
       gl={{
         antialias: true,
         alpha: true,
