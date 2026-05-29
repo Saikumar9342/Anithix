@@ -1,144 +1,101 @@
 "use client";
 
-import { TECH_STACK } from "@/lib/constants";
+import { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useReveal } from "@/hooks/useReveal";
 
 export function Technology() {
-  const ref = useReveal();
+  const revealRef = useReveal();
+  const sectionRef = useRef<HTMLDivElement>(null);
+  
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "center center"]
+  });
+
+  const scale = useTransform(scrollYProgress, [0, 1], [0.8, 1]);
+  const opacity = useTransform(scrollYProgress, [0, 1], [0, 1]);
+  const blur = useTransform(scrollYProgress, [0, 1], ["blur(20px)", "blur(0px)"]);
+  const rotateX = useTransform(scrollYProgress, [0, 1], [20, 0]); // 3D tilt
+
   return (
     <section
-      ref={ref}
+      ref={sectionRef}
       id="technology"
       className="section"
-      style={{ background: "var(--bg)" }}
+      style={{ background: "var(--bg)", perspective: "2000px", paddingBottom: "15rem" }}
     >
       <div className="wrap">
-        <div className="section-head">
-          <span className="eyebrow reveal">
-            <span className="idx">04</span> / Technology Stack
+        <div ref={revealRef} className="section-head reveal" style={{ marginBottom: "8rem" }}>
+          <span className="eyebrow" style={{ color: "var(--accent)" }}>
+            <span className="idx">04</span> // Technology Stack
           </span>
-          <h2 className="h-sec reveal reveal-d1">
+          <h2 className="display-massive">
             Engineered with<br />
             <span className="dim">the best tools.</span>
           </h2>
-          <p className="lede reveal reveal-d2">
+          <p className="lede reveal-d1" style={{ marginTop: "2rem", maxWidth: "600px" }}>
             A modern, battle-tested technology stack powering the entire Anithix ecosystem.
           </p>
         </div>
 
-        <div
-          className="reveal reveal-d1"
+        {/* 3D Scaling Grid Container */}
+        <motion.div
           style={{
+            scale,
+            opacity,
+            filter: blur,
+            rotateX,
             display: "grid",
             gridTemplateColumns: "repeat(2, 1fr)",
-            gap: "1px",
-            background: "var(--line)",
-            border: "1px solid var(--line)",
-            marginTop: "3rem",
+            gap: "2px",
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.05)",
+            borderRadius: "2rem",
+            overflow: "hidden"
           }}
         >
-          {/* Frontend */}
-          <div className="cell" style={{ padding: "2rem", background: "var(--bg)" }}>
-            <div style={{ color: "var(--ink-3)", fontSize: "0.85rem", fontWeight: 600, marginBottom: "1rem" }}>
-              Frontend
+          {/* Blocks */}
+          {[
+            { cat: "Frontend", items: ["Next.js", "React", "TypeScript", "Tailwind CSS"] },
+            { cat: "Backend", items: ["FastAPI", "Node.js", "Express", "Python"] },
+            { cat: "Databases", items: ["PostgreSQL", "MongoDB"] },
+            { cat: "AI & Models", items: ["Ollama", "OpenRouter", "Groq", "Together AI", "OpenAI APIs"] },
+            { cat: "Infrastructure", items: ["Docker", "Linux", "Apache", "Nginx"] },
+            { cat: "Approach", items: ["AI-native", "Performance-first", "DX-obsessed"] }
+          ].map((block, i) => (
+            <div key={i} className="cell" style={{ padding: "4rem 3rem", background: "var(--bg)" }}>
+              <div style={{ color: "var(--ink-3)", fontSize: "1rem", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 600, marginBottom: "2rem" }}>
+                {block.cat}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
+                {block.items.map((tech) => (
+                  <span key={tech} className="chip" style={{ background: "rgba(255,255,255,0.03)", fontSize: "1.1rem", padding: "0.5rem 1rem" }}>
+                    {tech}
+                  </span>
+                ))}
+              </div>
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
-              {["Next.js", "React", "TypeScript", "Tailwind CSS"].map((tech) => (
-                <span key={tech} className="pipe">
-                  {tech}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Backend */}
-          <div className="cell" style={{ padding: "2rem", background: "var(--bg)" }}>
-            <div style={{ color: "var(--ink-3)", fontSize: "0.85rem", fontWeight: 600, marginBottom: "1rem" }}>
-              Backend
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
-              {["FastAPI", "Node.js", "Express", "Python"].map((tech) => (
-                <span key={tech} className="pipe">
-                  {tech}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Databases */}
-          <div className="cell" style={{ padding: "2rem", background: "var(--bg)" }}>
-            <div style={{ color: "var(--ink-3)", fontSize: "0.85rem", fontWeight: 600, marginBottom: "1rem" }}>
-              Databases
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
-              {["PostgreSQL", "MongoDB"].map((tech) => (
-                <span key={tech} className="pipe">
-                  {tech}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* AI & Models */}
-          <div className="cell" style={{ padding: "2rem", background: "var(--bg)" }}>
-            <div style={{ color: "var(--ink-3)", fontSize: "0.85rem", fontWeight: 600, marginBottom: "1rem" }}>
-              AI & Models
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
-              {["Ollama", "OpenRouter", "Groq", "Together AI", "OpenAI APIs"].map((tech) => (
-                <span key={tech} className="pipe">
-                  {tech}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Infrastructure */}
-          <div className="cell" style={{ padding: "2rem", background: "var(--bg)" }}>
-            <div style={{ color: "var(--ink-3)", fontSize: "0.85rem", fontWeight: 600, marginBottom: "1rem" }}>
-              Infrastructure
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
-              {["Docker", "Linux", "Apache", "Nginx"].map((tech) => (
-                <span key={tech} className="pipe">
-                  {tech}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Approach */}
-          <div className="cell" style={{ padding: "2rem", background: "var(--bg)" }}>
-            <div style={{ color: "var(--ink-3)", fontSize: "0.85rem", fontWeight: 600, marginBottom: "1rem" }}>
-              Approach
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
-              {["AI-native", "Performance-first", "DX-obsessed"].map((tech) => (
-                <span key={tech} className="pipe">
-                  {tech}
-                </span>
-              ))}
-            </div>
-          </div>
+          ))}
 
           {/* Tech foot */}
           <div
             style={{
               gridColumn: "1 / -1",
-              padding: "2rem",
+              padding: "4rem",
               background: "var(--bg)",
               textAlign: "center",
-              borderTop: "1px solid var(--line)",
+              borderTop: "1px solid rgba(255,255,255,0.05)",
             }}
           >
-            <div className="eyebrow" style={{ justifyContent: "center", marginBottom: "0.8rem" }}>
+            <div className="eyebrow" style={{ justifyContent: "center", marginBottom: "1rem", color: "var(--accent)" }}>
               Built for scale
             </div>
-            <p style={{ fontSize: "1.1rem", fontWeight: 500, color: "var(--ink-2)" }}>
+            <p style={{ fontSize: "1.5rem", fontWeight: 500, color: "var(--ink-2)" }}>
               Advanced · Next-gen · Intelligent · Technology · Hub for Innovation & eXcellence
             </p>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

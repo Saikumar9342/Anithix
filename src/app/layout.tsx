@@ -36,10 +36,15 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+import { Preloader } from "@/components/layout/Preloader";
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={hankenGrotesk.variable}>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        <Preloader />
+        {children}
+      </body>
     </html>
   );
 }

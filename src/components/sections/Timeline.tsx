@@ -1,147 +1,93 @@
 "use client";
 
-import { useRef, useEffect } from "react";
-import { motion, useInView, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { TIMELINE } from "@/lib/constants";
+import { useReveal } from "@/hooks/useReveal";
+
+function TimelineCard({ item, isEven }: { item: any; isEven: boolean }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: cardRef,
+    offset: ["start end", "center center"]
+  });
+
+  const opacity = useTransform(scrollYProgress, [0.2, 0.8], [0, 1]);
+  const x = useTransform(scrollYProgress, [0.2, 0.8], [isEven ? -100 : 100, 0]);
+  const scale = useTransform(scrollYProgress, [0.2, 0.8], [0.8, 1]);
+
+  return (
+    <div className={`relative w-full flex ${isEven ? 'justify-start' : 'justify-end'} items-center`}>
+      <motion.div 
+        ref={cardRef}
+        style={{ opacity, x, scale }}
+        className={`w-full md:w-[45%] glass-panel p-8 md:p-12 rounded-[2rem] border border-white/5 bg-black/40 backdrop-blur-xl shadow-2xl ${isEven ? 'md:text-right' : 'md:text-left'}`}
+      >
+        <span className="eyebrow inline-block mb-4" style={{ color: "var(--accent)", fontSize: "1.2rem", justifyContent: isEven ? 'flex-end' : 'flex-start' }}>{item.year}</span>
+        <h3 className="display mb-3" style={{ fontSize: "clamp(1.5rem, 3vw, 2.5rem)" }}>{item.title}</h3>
+        <p className="text-[1.1rem] text-[var(--ink-3)] leading-relaxed">{item.description}</p>
+      </motion.div>
+      
+      {/* Center glowing dot indicator */}
+      <motion.div 
+        style={{ opacity, scale }}
+        className="hidden md:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[var(--bg)] border-[4px] border-[var(--accent)] z-10" 
+      />
+    </div>
+  );
+}
 
 export function Timeline() {
+  const revealRef = useReveal();
   const sectionRef = useRef<HTMLDivElement>(null);
-  const inView = useInView(sectionRef, { once: true, margin: "-80px" });
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
-    offset: ["start end", "end start"],
+    offset: ["start center", "end end"],
   });
 
-  const lineHeight = useTransform(scrollYProgress, [0.1, 0.9], ["0%", "100%"]);
-
-  // Handle reveal animations when section comes into view
-  useEffect(() => {
-    const handleReveal = () => {
-      if (sectionRef.current) {
-        const reveals = sectionRef.current.querySelectorAll(".reveal");
-        reveals.forEach((el) => {
-          el.classList.add("in");
-        });
-      }
-    };
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            handleReveal();
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
+  const lineHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+  
   return (
     <section
       id="timeline"
-      className="section"
+      className="section relative overflow-hidden"
       ref={sectionRef}
-      style={{ background: "var(--bg)" }}
+      style={{ background: "var(--bg)", paddingBottom: "15rem" }}
     >
-      <div className="wrap">
-        <div className="section-head">
-          <span className="eyebrow reveal">
-            <span className="idx">05</span> / Our Journey
-          </span>
-          <h2 className="h-sec reveal reveal-d1">
+      <div className="wrap mb-24">
+        <div ref={revealRef} className="section-head reveal">
+          <div className="eyebrow" style={{ color: "var(--accent)" }}>
+            <span className="idx">06</span> // Our Journey
+          </div>
+          <h2 className="display-massive">
             From vision<br />
-            <span className="dim">to reality.</span>
+            <span style={{ color: "var(--ink-3)" }}>to reality.</span>
           </h2>
         </div>
+      </div>
 
-        <div
-          className="reveal reveal-d2"
-          style={{
-            position: "relative",
-            marginTop: "3rem",
-          }}
-        >
-          {/* Animated vertical line */}
-          <div
-            style={{
-              position: "absolute",
-              left: "16px",
-              top: 0,
-              bottom: 0,
-              width: "1px",
-              background: "var(--line-2)",
-            }}
-          >
+      <div className="wrap relative">
+        <div className="relative max-w-5xl mx-auto py-20">
+          {/* Animated vertical central line */}
+          <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-[2px] bg-white/5 -translate-x-1/2 rounded-full overflow-hidden">
             <motion.div
               style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                width: "1px",
                 height: lineHeight,
-                background: "var(--accent)",
+                background: "linear-gradient(to bottom, transparent, var(--accent), var(--live))",
+                boxShadow: "0 0 20px var(--accent)",
               }}
+              className="w-full absolute top-0 left-0 rounded-full"
             />
           </div>
 
-          {/* Timeline items */}
-          <div style={{ paddingLeft: "4rem" }}>
-            {TIMELINE.map((item, i) => (
-              <motion.div
-                key={`${item.year}-${item.title}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={inView ? { opacity: 1, y: 0 } : {}}
-                transition={{
-                  duration: 0.6,
-                  delay: i * 0.1,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-                style={{
-                  position: "relative",
-                  paddingBottom: "2rem",
-                }}
-              >
-                {/* Marker dot */}
-                <div
-                  style={{
-                    position: "absolute",
-                    left: "-3.25rem",
-                    top: "0.25rem",
-                    width: "10px",
-                    height: "10px",
-                    borderRadius: "50%",
-                    background: "var(--accent)",
-                    border: "3px solid var(--bg)",
-                    boxShadow: "0 0 8px rgba(196, 188, 255, 0.4)",
-                  }}
-                />
-
-                {/* Content */}
-                <div>
-                  <div className="eyebrow" style={{ marginBottom: "0.5rem" }}>
-                    <span style={{ color: "var(--accent)" }}>{item.year}</span>
-                  </div>
-                  <h3 style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "0.3rem", color: "var(--ink)" }}>
-                    {item.title}
-                  </h3>
-                  <p style={{ color: "var(--ink-3)", fontSize: "0.95rem" }}>
-                    {item.description}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
+          <div className="flex flex-col gap-16 md:gap-32">
+            {TIMELINE.map((item, i) => {
+              const isEven = i % 2 === 0;
+              return (
+                <TimelineCard key={i} item={item} isEven={isEven} />
+              )
+            })}
           </div>
         </div>
       </div>

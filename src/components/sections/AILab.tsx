@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useEffect } from "react";
-import { motion, useInView } from "framer-motion";
+import { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { Brain, Cpu, Zap, GitBranch, FlaskConical, Sparkles } from "lucide-react";
+import { useReveal } from "@/hooks/useReveal";
 
 const LAB_ITEMS = [
   {
@@ -49,184 +50,84 @@ const LAB_ITEMS = [
   },
 ];
 
-function NeuralNetworkViz() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+function StickyCard({ item, index }: { item: any; index: number }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: cardRef,
+    offset: ["start end", "start start"]
+  });
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-
-    const nodes: Array<{ x: number; y: number; vx: number; vy: number; r: number; color: string }> = [];
-    const colors = ["rgba(124,58,237,0.6)", "rgba(6,182,212,0.6)", "rgba(168,85,247,0.6)"];
-
-    for (let i = 0; i < 40; i++) {
-      nodes.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        r: Math.random() * 3 + 1.5,
-        color: colors[Math.floor(Math.random() * colors.length)],
-      });
-    }
-
-    let animId: number;
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      nodes.forEach((n) => {
-        n.x += n.vx;
-        n.y += n.vy;
-        if (n.x < 0 || n.x > canvas.width) n.vx *= -1;
-        if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
-      });
-
-      // Draw connections
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const dx = nodes[i].x - nodes[j].x;
-          const dy = nodes[i].y - nodes[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 100) {
-            ctx.beginPath();
-            ctx.moveTo(nodes[i].x, nodes[i].y);
-            ctx.lineTo(nodes[j].x, nodes[j].y);
-            ctx.strokeStyle = `rgba(124,58,237,${0.15 * (1 - dist / 100)})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
-        }
-      }
-
-      // Draw nodes
-      nodes.forEach((n) => {
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        ctx.fillStyle = n.color;
-        ctx.fill();
-      });
-
-      animId = requestAnimationFrame(draw);
-    };
-
-    draw();
-    return () => cancelAnimationFrame(animId);
-  }, []);
+  // Calculate the sticky top offset so they stack beautifully
+  const topOffset = 150 + index * 40; // pixels from top
+  const zIndex = index;
+  
+  // Parallax the icon inside the card
+  const iconY = useTransform(scrollYProgress, [0, 1], [-80, 0]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 w-full h-full opacity-40"
-      style={{ pointerEvents: "none" }}
-    />
+    <div 
+      className="sticky" 
+      style={{ top: `${topOffset}px`, zIndex, paddingBottom: "10vh" }}
+    >
+      <motion.div 
+        ref={cardRef}
+        initial={{ opacity: 0, y: 100 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="glass-panel w-full p-8 md:p-16 rounded-[2rem] border border-white/5 flex flex-col md:flex-row gap-8 md:gap-16 items-start backdrop-blur-2xl"
+        style={{ 
+          background: `linear-gradient(135deg, rgba(20,20,25,0.95) 0%, rgba(5,5,8,0.98) 100%)`,
+          boxShadow: "0 -20px 40px rgba(0,0,0,0.6)",
+          transformOrigin: "top center"
+        }}
+      >
+        <motion.div style={{ y: iconY }} className="p-8 rounded-[1.5rem] bg-white/5 border border-white/10 shrink-0">
+          <item.icon size={64} color={item.color} strokeWidth={1} />
+        </motion.div>
+        
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-sm tracking-widest uppercase font-bold" style={{ color: item.color }}>{item.status}</span>
+            <motion.div 
+              className="w-2 h-2 rounded-full" 
+              style={{ background: item.color, boxShadow: `0 0 15px ${item.color}` }} 
+              animate={{ opacity: [1, 0.4, 1] }}
+              transition={{ duration: 2, repeat: Infinity, delay: index * 0.2 }}
+            />
+          </div>
+          <h3 className="display mb-4" style={{ fontSize: "clamp(2rem, 4vw, 3rem)" }}>{item.title}</h3>
+          <p className="text-xl text-[var(--ink-3)] leading-relaxed max-w-2xl font-medium">{item.desc}</p>
+        </div>
+      </motion.div>
+    </div>
   );
 }
 
 export function AILab() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const inView = useInView(sectionRef, { once: true, margin: "-80px" });
+  const revealRef = useReveal();
 
   return (
-    <section
-      id="ai-lab"
-      className="section relative overflow-hidden"
-      ref={sectionRef}
-      style={{ background: "var(--bg)" }}
-    >
-      {/* Neural network background */}
-      <div className="absolute inset-0">
-        <NeuralNetworkViz />
-      </div>
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "linear-gradient(to bottom, var(--bg), transparent, var(--bg))",
-        }}
-      />
-
-      <div className="relative wrap">
-        {/* Header */}
-        <div className="section-head reveal in">
-          <div className="eyebrow reveal in reveal-d1">
-            <span className="idx">05</span>AI Lab
+    <section id="ai-lab" className="section relative" style={{ background: "var(--bg)", paddingBottom: "20rem" }}>
+      <div className="wrap mb-24">
+        <div ref={revealRef} className="section-head reveal">
+          <div className="eyebrow" style={{ color: "var(--accent)" }}>
+            <span className="idx">05</span> // AI Lab
           </div>
-
-          <h2 className="h-sec reveal in reveal-d2">
-            Where the future{"\n"}comes to life.
+          <h2 className="display-massive">
+            Where the future <br/> comes to life.
           </h2>
-
-          <p className="lede reveal in reveal-d3">
-            Deep research, experimental systems, and emerging technologies being
-            developed inside the Anithix lab.
+          <p className="lede reveal-d1" style={{ marginTop: "2rem", maxWidth: "600px" }}>
+            Deep research, experimental systems, and emerging technologies being developed inside the Anithix lab.
           </p>
         </div>
+      </div>
 
-        {/* Lab cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 bg-[var(--line)] border border-[var(--line)]">
-          {LAB_ITEMS.map((item, i) => {
-            const Icon = item.icon;
-            return (
-              <motion.div
-                key={item.title}
-                initial={{ opacity: 0, y: 40 }}
-                animate={inView ? { opacity: 1, y: 0 } : {}}
-                transition={{
-                  duration: 0.7,
-                  delay: 0.3 + i * 0.1,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-                className="cell p-6 flex flex-col"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div
-                    className="w-8 h-8 rounded flex items-center justify-center"
-                    style={{
-                      border: "1px solid var(--line-2)",
-                      color: "var(--accent)",
-                    }}
-                  >
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <span
-                    className="text-xs font-500"
-                    style={{ color: "var(--ink-4)" }}
-                  >
-                    {item.status}
-                  </span>
-                </div>
-
-                <h3 className="font-600 text-sm mb-2" style={{ color: "var(--ink)" }}>
-                  {item.title}
-                </h3>
-                <p className="text-xs leading-relaxed mb-4" style={{ color: "var(--ink-3)" }}>
-                  {item.desc}
-                </p>
-
-                {/* Pulse indicator */}
-                <div className="flex items-center gap-2 mt-auto">
-                  <motion.div
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{ background: "var(--live)" }}
-                    animate={{ opacity: [1, 0.3, 1] }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      delay: i * 0.3,
-                    }}
-                  />
-                  <span className="text-xs" style={{ color: "var(--ink-4)" }}>
-                    Active
-                  </span>
-                </div>
-              </motion.div>
-            );
-          })}
+      <div className="wrap relative">
+        <div className="flex flex-col relative">
+          {LAB_ITEMS.map((item, i) => (
+            <StickyCard key={i} item={item} index={i} />
+          ))}
         </div>
       </div>
     </section>

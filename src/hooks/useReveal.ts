@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
-export function useReveal() {
-  const ref = useRef<HTMLElement>(null);
+export function useReveal<T extends HTMLElement = any>() {
+  const ref = useRef<T>(null);
 
   useEffect(() => {
     if (!ref.current) return;

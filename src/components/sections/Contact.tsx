@@ -1,43 +1,23 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
-import { useInView } from "framer-motion";
+import { useRef, useState } from "react";
+import { motion, useScroll, useSpring, useTransform, useVelocity } from "framer-motion";
 import { SITE_CONFIG } from "@/lib/constants";
+import { useReveal } from "@/hooks/useReveal";
 
 export function Contact() {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const inView = useInView(sectionRef, { once: true, margin: "-80px" });
+  const revealRef = useReveal();
 
-  useEffect(() => {
-    const handleReveal = () => {
-      if (sectionRef.current) {
-        const reveals = sectionRef.current.querySelectorAll(".reveal");
-        reveals.forEach((el) => {
-          el.classList.add("in");
-        });
-      }
-    };
+  const { scrollY } = useScroll();
+  const scrollVelocity = useVelocity(scrollY);
+  const smoothVelocity = useSpring(scrollVelocity, {
+    damping: 50,
+    stiffness: 400
+  });
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            handleReveal();
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
+  // Skew up to 8 degrees based on scroll velocity
+  const skewY = useTransform(smoothVelocity, [-2000, 2000], [-8, 8]);
 
   const [form, setForm] = useState({
     name: "",
@@ -58,18 +38,23 @@ export function Contact() {
       id="contact"
       ref={sectionRef}
       className="section"
-      style={{ background: "var(--bg)" }}
+      style={{ background: "var(--bg)", paddingBottom: "10rem" }}
     >
       <div className="wrap">
-        <div className="section-head">
-          <span className="eyebrow reveal">
-            <span className="idx">08</span> / Get in Touch
+        <div ref={revealRef} className="section-head reveal">
+          <span className="eyebrow" style={{ color: "var(--accent)" }}>
+            <span className="idx">08</span> // Get in Touch
           </span>
-          <h2 className="h-sec reveal reveal-d1">
-            Let's build<br />
-            <span className="dim">something great.</span>
-          </h2>
-          <p className="lede reveal reveal-d2">
+          
+          {/* Velocity Skewed Text */}
+          <motion.div style={{ skewY, transformOrigin: "left center" }}>
+            <h2 className="display-massive">
+              Let's build<br />
+              <span className="dim" style={{ color: "var(--ink-3)" }}>something great.</span>
+            </h2>
+          </motion.div>
+
+          <p className="lede reveal-d1" style={{ marginTop: "2rem", maxWidth: "600px" }}>
             Whether you're curious about our products, want to partner, or just want to say hi —
             we'd love to hear from you.
           </p>
@@ -78,9 +63,9 @@ export function Contact() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1.5fr",
-            gap: "3rem",
-            marginTop: "3rem",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: "4rem",
+            marginTop: "6rem",
             alignItems: "start",
           }}
         >
@@ -110,88 +95,71 @@ export function Contact() {
                   href={item.href}
                   target={item.href.startsWith("http") ? "_blank" : undefined}
                   rel="noopener noreferrer"
-                  className="cell"
+                  className="glass-panel"
                   style={{
                     display: "flex",
-                    gap: "1rem",
-                    padding: "1.2rem",
-                    marginBottom: "0.5rem",
+                    gap: "1.5rem",
+                    padding: "1.5rem",
+                    marginBottom: "1rem",
                     textDecoration: "none",
+                    borderRadius: "1.5rem",
+                    border: "1px solid rgba(255,255,255,0.05)",
+                    transition: "all 0.3s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "var(--accent)";
+                    e.currentTarget.style.transform = "translateY(-5px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)";
+                    e.currentTarget.style.transform = "translateY(0)";
                   }}
                 >
                   <div
                     style={{
-                      width: "20px",
-                      height: "20px",
-                      flexShrink: 0,
+                      fontSize: "1.5rem",
                       color: "var(--accent)",
                     }}
                   >
-                    ✉
+                    ◈
                   </div>
                   <div>
-                    <div style={{ fontSize: "0.75rem", color: "var(--ink-4)" }}>
+                    <div style={{ fontSize: "0.85rem", color: "var(--ink-4)", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>
                       {item.label}
                     </div>
-                    <div style={{ fontSize: "0.9rem", color: "var(--ink)" }}>
+                    <div style={{ fontSize: "1.1rem", color: "var(--ink)", marginTop: "0.2rem" }}>
                       {item.value}
                     </div>
                   </div>
                 </a>
               ))}
             </div>
-
-            {/* Availability */}
-            <div className="cell" style={{ padding: "1.2rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.6rem" }}>
-                <span className="dot"></span>
-                <span style={{ fontSize: "0.75rem", fontWeight: 500, color: "var(--live)" }}>
-                  Available for collaboration
-                </span>
-              </div>
-              <p style={{ fontSize: "0.85rem", color: "var(--ink-3)", lineHeight: 1.5 }}>
-                Open to product partnerships, developer collaborations, and early access inquiries.
-              </p>
-            </div>
           </div>
 
           {/* Contact form */}
-          <div className="reveal reveal-d1">
+          <div className="glass-panel reveal reveal-d1" style={{ padding: "3rem", borderRadius: "2rem", border: "1px solid rgba(255,255,255,0.05)" }}>
             {submitted ? (
-              <div className="cell" style={{ padding: "2rem", textAlign: "center" }}>
-                <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>✓</div>
-                <h3 style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "0.5rem" }}>
+              <div style={{ textAlign: "center", padding: "4rem 0" }}>
+                <div style={{ fontSize: "4rem", marginBottom: "1rem", color: "var(--accent)" }}>✓</div>
+                <h3 className="display" style={{ fontSize: "2rem", marginBottom: "1rem" }}>
                   Message sent!
                 </h3>
-                <p style={{ color: "var(--ink-3)" }}>
+                <p style={{ color: "var(--ink-3)", fontSize: "1.1rem" }}>
                   Thanks for reaching out. We'll get back to you soon.
                 </p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="cell" style={{ padding: "2rem" }}>
-                {/* Name & Email */}
+              <form onSubmit={handleSubmit}>
                 <div
                   style={{
                     display: "grid",
                     gridTemplateColumns: "1fr 1fr",
-                    gap: "1rem",
-                    marginBottom: "1.5rem",
+                    gap: "1.5rem",
+                    marginBottom: "2rem",
                   }}
                 >
                   <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "0.7rem",
-                        color: "var(--ink-4)",
-                        fontFamily: "var(--mono)",
-                        letterSpacing: "0.1em",
-                        textTransform: "uppercase",
-                        marginBottom: "0.5rem",
-                      }}
-                    >
-                      Name
-                    </label>
+                    <label className="eyebrow" style={{ display: "flex", marginBottom: "0.5rem" }}>Name</label>
                     <input
                       type="text"
                       required
@@ -200,31 +168,21 @@ export function Contact() {
                       placeholder="Your name"
                       style={{
                         width: "100%",
-                        background: "transparent",
-                        border: "1px solid var(--line)",
-                        borderRadius: "4px",
-                        padding: "0.6rem 0.8rem",
+                        background: "rgba(0,0,0,0.5)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: "0.8rem",
+                        padding: "1rem 1.2rem",
                         color: "var(--ink)",
-                        fontSize: "0.9rem",
+                        fontSize: "1rem",
+                        outline: "none",
+                        transition: "all 0.3s ease"
                       }}
                       onFocus={(e) => (e.target.style.borderColor = "var(--accent)")}
-                      onBlur={(e) => (e.target.style.borderColor = "var(--line)")}
+                      onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.1)")}
                     />
                   </div>
                   <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "0.7rem",
-                        color: "var(--ink-4)",
-                        fontFamily: "var(--mono)",
-                        letterSpacing: "0.1em",
-                        textTransform: "uppercase",
-                        marginBottom: "0.5rem",
-                      }}
-                    >
-                      Email
-                    </label>
+                    <label className="eyebrow" style={{ display: "flex", marginBottom: "0.5rem" }}>Email</label>
                     <input
                       type="email"
                       required
@@ -233,59 +191,41 @@ export function Contact() {
                       placeholder="your@email.com"
                       style={{
                         width: "100%",
-                        background: "transparent",
-                        border: "1px solid var(--line)",
-                        borderRadius: "4px",
-                        padding: "0.6rem 0.8rem",
+                        background: "rgba(0,0,0,0.5)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: "0.8rem",
+                        padding: "1rem 1.2rem",
                         color: "var(--ink)",
-                        fontSize: "0.9rem",
+                        fontSize: "1rem",
+                        outline: "none",
+                        transition: "all 0.3s ease"
                       }}
                       onFocus={(e) => (e.target.style.borderColor = "var(--accent)")}
-                      onBlur={(e) => (e.target.style.borderColor = "var(--line)")}
+                      onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.1)")}
                     />
                   </div>
                 </div>
 
-                {/* Inquiry type */}
-                <div style={{ marginBottom: "1.5rem" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "0.7rem",
-                      color: "var(--ink-4)",
-                      fontFamily: "var(--mono)",
-                      letterSpacing: "0.1em",
-                      textTransform: "uppercase",
-                      marginBottom: "0.8rem",
-                    }}
-                  >
-                    Inquiry type
-                  </label>
-                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                <div style={{ marginBottom: "2rem" }}>
+                  <label className="eyebrow" style={{ display: "flex", marginBottom: "1rem" }}>Inquiry type</label>
+                  <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
                     {["General", "Product", "Business"].map((type) => (
                       <button
                         key={type}
                         type="button"
                         onClick={() => setForm({ ...form, type: type.toLowerCase() })}
                         style={{
-                          padding: "0.6rem 1rem",
-                          borderRadius: "6px",
-                          fontSize: "0.85rem",
-                          fontWeight: 500,
-                          border: "1px solid var(--line)",
-                          background: form.type === type.toLowerCase() ? "var(--bg-1)" : "transparent",
-                          color: form.type === type.toLowerCase() ? "var(--accent)" : "var(--ink-3)",
+                          padding: "0.8rem 1.5rem",
+                          borderRadius: "2rem",
+                          fontSize: "0.9rem",
+                          fontWeight: 600,
+                          border: "1px solid",
+                          borderColor: form.type === type.toLowerCase() ? "var(--accent)" : "rgba(255,255,255,0.1)",
+                          background: form.type === type.toLowerCase() ? "var(--accent)" : "transparent",
+                          color: form.type === type.toLowerCase() ? "var(--bg)" : "var(--ink-3)",
                           cursor: "pointer",
                           transition: "all 0.3s ease",
                         }}
-                        onMouseEnter={(e) =>
-                          form.type !== type.toLowerCase() &&
-                          (e.currentTarget.style.borderColor = "var(--accent)")
-                        }
-                        onMouseLeave={(e) =>
-                          form.type !== type.toLowerCase() &&
-                          (e.currentTarget.style.borderColor = "var(--line)")
-                        }
                       >
                         {type}
                       </button>
@@ -293,21 +233,8 @@ export function Contact() {
                   </div>
                 </div>
 
-                {/* Message */}
-                <div style={{ marginBottom: "1.5rem" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "0.7rem",
-                      color: "var(--ink-4)",
-                      fontFamily: "var(--mono)",
-                      letterSpacing: "0.1em",
-                      textTransform: "uppercase",
-                      marginBottom: "0.5rem",
-                    }}
-                  >
-                    Message
-                  </label>
+                <div style={{ marginBottom: "2rem" }}>
+                  <label className="eyebrow" style={{ display: "flex", marginBottom: "0.5rem" }}>Message</label>
                   <textarea
                     required
                     rows={4}
@@ -316,31 +243,42 @@ export function Contact() {
                     placeholder="Tell us what you have in mind…"
                     style={{
                       width: "100%",
-                      background: "transparent",
-                      border: "1px solid var(--line)",
-                      borderRadius: "4px",
-                      padding: "0.6rem 0.8rem",
+                      background: "rgba(0,0,0,0.5)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: "1rem",
+                      padding: "1rem 1.2rem",
                       color: "var(--ink)",
-                      fontSize: "0.9rem",
+                      fontSize: "1rem",
                       fontFamily: "inherit",
                       resize: "none",
+                      outline: "none",
+                      transition: "all 0.3s ease"
                     }}
                     onFocus={(e) => (e.target.style.borderColor = "var(--accent)")}
-                    onBlur={(e) => (e.target.style.borderColor = "var(--line)")}
+                    onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.1)")}
                   />
                 </div>
 
-                {/* Submit button */}
                 <button
                   type="submit"
-                  className="btn btn-solid"
                   style={{
                     width: "100%",
                     background: "var(--accent)",
                     color: "var(--bg)",
+                    padding: "1.2rem",
+                    borderRadius: "1rem",
+                    fontSize: "1.1rem",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                    border: "none",
+                    cursor: "pointer",
+                    transition: "transform 0.2s ease",
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.02)"}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
                 >
-                  Send message →
+                  Send message
                 </button>
               </form>
             )}

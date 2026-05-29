@@ -4,25 +4,60 @@ import { useReveal } from "@/hooks/useReveal";
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 
+function ProductCard({ 
+  title, 
+  subtitle, 
+  desc, 
+  image, 
+  alignRight, 
+  children 
+}: {
+  title: string;
+  subtitle: string;
+  desc: string;
+  image: string;
+  alignRight?: boolean;
+  children: React.ReactNode;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"]
+  });
+  
+  const imgScale = useTransform(scrollYProgress, [0, 0.5], [1.3, 1]); 
+  const imgY = useTransform(scrollYProgress, [0, 1], ["-15%", "15%"]); 
+  const panelY = useTransform(scrollYProgress, [0, 1], [100, -100]); 
+  
+  return (
+    <div ref={containerRef} className="relative h-[90vh] min-h-[700px] w-full rounded-[2rem] overflow-hidden mb-32 reveal">
+      <motion.img 
+        src={image} 
+        alt={title}
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ scale: imgScale, y: imgY }} 
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
+      
+      <div className={`absolute inset-0 p-8 md:p-16 flex flex-col justify-end ${alignRight ? 'items-end' : 'items-start'}`}>
+        <motion.div style={{ y: panelY }} className="glass-panel max-w-2xl w-full backdrop-blur-3xl bg-black/40 border border-white/10 p-8 md:p-12 rounded-[1.5rem]">
+          <div className="mb-8">
+            <h3 className="display" style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)", marginBottom: "0.5rem" }}>{title}</h3>
+            <p style={{ fontSize: "1.2rem", color: "var(--accent)", fontWeight: 500 }}>{subtitle}</p>
+          </div>
+          <p className="lede" style={{ marginBottom: "2rem", fontSize: "1.1rem" }}>{desc}</p>
+          {children}
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
 export function Products() {
   const revealRef = useReveal();
 
-  const { scrollYProgress } = useScroll({
-    target: revealRef,
-    offset: ["start end", "end start"]
-  });
-
-  // Parallax offsets for different elements
-  const y1 = useTransform(scrollYProgress, [0, 1], [80, -80]);
-  const y2 = useTransform(scrollYProgress, [0, 1], [-50, 50]);
-  const y3 = useTransform(scrollYProgress, [0, 1], [120, -120]);
-
   return (
-    <section ref={revealRef} id="products" className="section" style={{ background: "var(--bg)", overflow: "hidden" }}>
-      {/* Abstract Background Glows */}
-      <motion.div className="glow-blob" style={{ y: y2, top: "25%", right: "-10%", width: "800px", height: "800px", background: "rgba(139,92,246,0.08)" }} />
-      <motion.div className="glow-blob" style={{ y: y1, bottom: "25%", left: "-10%", width: "600px", height: "600px", background: "rgba(79,70,229,0.08)" }} />
-
+    <section ref={revealRef} id="products" className="section" style={{ background: "var(--bg)", overflow: "hidden", paddingBottom: "10rem" }}>
       <div className="wrap" style={{ position: "relative", zIndex: 10 }}>
         {/* Massive Section Header */}
         <div className="section-head reveal" style={{ marginBottom: "10rem" }}>
@@ -39,147 +74,103 @@ export function Products() {
         </div>
 
         {/* GRAVITON */}
-        <div className="reveal" style={{ marginBottom: "10rem", display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: "4rem", alignItems: "center" }}>
-          <div style={{ order: 1 }}>
-            <h3 className="display" style={{ marginBottom: "1rem" }}>Graviton</h3>
-            <p style={{ fontSize: "1.4rem", color: "var(--accent)", marginBottom: "1.5rem", fontWeight: 500 }}>
-              Your personal AI workspace with a newspaper soul.
-            </p>
-            <p className="lede" style={{ marginBottom: "2rem" }}>
-              Connect every AI provider in one intelligent interface. Run local models via Ollama or connect cloud providers (Groq, OpenRouter). Graviton wraps everything in a deeply customizable editorial interface featuring "The Daily Brief" and 8 premium theme presets.
-            </p>
-            <div className="trust">
-              {['Multi-Provider AI', 'Ollama Models', '8 Themes', 'Persistent History'].map(tag => (
-                <span key={tag} className="chip" style={{ background: "rgba(255,255,255,0.03)" }}>{tag}</span>
-              ))}
+        <ProductCard
+          title="Graviton"
+          subtitle="Your personal AI workspace with a newspaper soul."
+          desc="Connect every AI provider in one intelligent interface. Run local models via Ollama or connect cloud providers. Graviton wraps everything in a deeply customizable editorial interface featuring 'The Daily Brief' and 8 premium theme presets."
+          image="/images/graviton.png"
+          alignRight={false}
+        >
+          <div className="trust mb-8">
+            {['Multi-Provider AI', 'Ollama Models', '8 Themes'].map(tag => (
+              <span key={tag} className="chip" style={{ background: "rgba(255,255,255,0.05)" }}>{tag}</span>
+            ))}
+          </div>
+          <div className="feat-list" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
+            <div>
+              <div style={{ fontSize: "1.5rem", color: "var(--accent)", marginBottom: "0.5rem" }}>◐</div>
+              <h4 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.25rem" }}>Local & Cloud</h4>
+              <p style={{ fontSize: "0.85rem", color: "var(--ink-3)" }}>Ollama, OpenRouter, Groq in one workspace.</p>
+            </div>
+            <div>
+              <div style={{ fontSize: "1.5rem", color: "var(--accent)", marginBottom: "0.5rem" }}>📰</div>
+              <h4 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.25rem" }}>The Daily Brief</h4>
+              <p style={{ fontSize: "0.85rem", color: "var(--ink-3)" }}>Live news, weather, and open threads.</p>
             </div>
           </div>
-          <motion.div className="glass-panel" style={{ order: 2, y: y1 }}>
-            <div style={{ position: "absolute", top: "1rem", right: "2rem", fontSize: "6rem", opacity: 0.05, fontFamily: "var(--mono)", fontWeight: 700 }}>01</div>
-            <div className="feat-list" style={{ position: "relative", zIndex: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
-              {[
-                { ico: "◐", title: "Local & Cloud", desc: "Ollama, OpenRouter, Groq, Together AI in one workspace." },
-                { ico: "📰", title: "The Daily Brief", desc: "Live news, weather, and open threads in a beautiful dashboard." },
-                { ico: "🎨", title: "Deep Theming", desc: "8 presets from Editorial Dark to Ocean Glass. 27+ controls." },
-                { ico: "◇", title: "Chat Modes", desc: "Switch instantly between Chat, Dev, and Research modes." },
-              ].map((item, i) => (
-                <div key={i} style={{ display: "flex", flexDirection: "column" }}>
-                  <div style={{ fontSize: "2rem", color: "var(--accent)", marginBottom: "1rem" }}>{item.ico}</div>
-                  <h4 style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "0.5rem" }}>{item.title}</h4>
-                  <p style={{ fontSize: "0.9rem", color: "var(--ink-3)" }}>{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
+        </ProductCard>
 
         {/* ATOM */}
-        <div className="reveal" style={{ marginBottom: "10rem", display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "4rem", alignItems: "center" }}>
-          <motion.div className="glass-panel" style={{ order: 1, y: y3 }}>
-            <div style={{ position: "absolute", top: "1rem", left: "2rem", fontSize: "6rem", opacity: 0.05, fontFamily: "var(--mono)", fontWeight: 700 }}>02</div>
-            <div className="steps" style={{ position: "relative", zIndex: 10 }}>
-              {[
-                { sn: "01", title: "Upload your resume", desc: "Drop your existing PDF. AI extracts and structures your data instantly." },
-                { sn: "02", title: "AI generates portfolio", desc: "The design engine creates a stunning portfolio website in seconds." },
-                { sn: "03", title: "Customize & enhance", desc: "Fine-tune every detail from your phone. AI suggests improvements." },
-                { sn: "04", title: "Go live instantly", desc: "Publish your live portfolio with one tap. Custom domain support included." },
-              ].map((step) => (
-                <div key={step.sn} className="step" style={{ padding: "1.5rem 0" }}>
-                  <span className="sn" style={{ fontSize: "1.2rem", color: "var(--live)" }}>{step.sn}</span>
-                  <div>
-                    <h5 style={{ fontSize: "1.1rem" }}>{step.title}</h5>
-                    <p style={{ fontSize: "0.95rem" }}>{step.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-          <div style={{ order: 2 }}>
-            <h3 className="display" style={{ marginBottom: "1rem" }}>Atom</h3>
-            <p style={{ fontSize: "1.4rem", color: "var(--live)", marginBottom: "1.5rem", fontWeight: 500 }}>
-              Your portfolio, from your pocket.
-            </p>
-            <p className="lede" style={{ marginBottom: "2rem" }}>
-              A mobile-first builder that lets you create and manage professional portfolio websites entirely from your smartphone. Upload a resume and watch AI transform it into a stunning live website.
-            </p>
-            <div className="trust">
-              {['Resume to Portfolio', 'Mobile Management', 'One-Tap Writing', 'Live Sync'].map(tag => (
-                <span key={tag} className="chip" style={{ background: "rgba(255,255,255,0.03)" }}>{tag}</span>
-              ))}
-            </div>
+        <ProductCard
+          title="Atom"
+          subtitle="Your portfolio, from your pocket."
+          desc="A mobile-first builder that lets you create and manage professional portfolio websites entirely from your smartphone. Upload a resume and watch AI transform it into a stunning live website in seconds."
+          image="/images/atom.png"
+          alignRight={true}
+        >
+          <div className="trust mb-8 justify-end">
+            {['Resume to Portfolio', 'Mobile Management', 'Live Sync'].map(tag => (
+              <span key={tag} className="chip" style={{ background: "rgba(255,255,255,0.05)" }}>{tag}</span>
+            ))}
           </div>
-        </div>
+          <div className="steps">
+            {[
+              { sn: "01", title: "Upload PDF", desc: "AI extracts data instantly." },
+              { sn: "02", title: "AI Design", desc: "Generates stunning layouts." },
+            ].map((step) => (
+              <div key={step.sn} className="step" style={{ padding: "1rem 0" }}>
+                <span className="sn" style={{ fontSize: "1rem", color: "var(--live)" }}>{step.sn}</span>
+                <div>
+                  <h5 style={{ fontSize: "1rem" }}>{step.title}</h5>
+                  <p style={{ fontSize: "0.85rem" }}>{step.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ProductCard>
 
         {/* ORBIS */}
-        <div className="reveal" style={{ marginBottom: "10rem", display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: "4rem", alignItems: "center" }}>
-          <div style={{ order: 1 }}>
-            <h3 className="display" style={{ marginBottom: "1rem" }}>Orbis</h3>
-            <p style={{ fontSize: "1.4rem", color: "#60a5fa", marginBottom: "1.5rem", fontWeight: 500 }}>
-              Automate your content universe.
-            </p>
-            <p className="lede" style={{ marginBottom: "2rem" }}>
-              An AI Media OS that discovers trends, writes content, generates visuals, and publishes on autopilot. Features an advanced Analytics Dashboard, AI-driven A/B Testing, and Smart Scheduling.
-            </p>
-            <div className="trust">
-              {['AI Media OS', 'Analytics', 'A/B Testing', 'Smart Schedule'].map(tag => (
-                <span key={tag} className="chip" style={{ background: "rgba(255,255,255,0.03)" }}>{tag}</span>
-              ))}
-            </div>
+        <ProductCard
+          title="Orbis"
+          subtitle="Automate your content universe."
+          desc="An AI Media OS that discovers trends, writes content, generates visuals, and publishes on autopilot. Features an advanced Analytics Dashboard, AI-driven A/B Testing, and Smart Scheduling."
+          image="/images/orbis.png"
+          alignRight={false}
+        >
+          <div className="trust mb-8">
+            {['AI Media OS', 'A/B Testing', 'Smart Schedule'].map(tag => (
+              <span key={tag} className="chip" style={{ background: "rgba(255,255,255,0.05)" }}>{tag}</span>
+            ))}
           </div>
-          <motion.div className="glass-panel" style={{ order: 2, y: y2 }}>
-            <div style={{ position: "absolute", top: "1rem", right: "2rem", fontSize: "6rem", opacity: 0.05, fontFamily: "var(--mono)", fontWeight: 700 }}>03</div>
-            
-            {/* Visual Pipeline */}
-            <div className="pipeline" style={{ marginBottom: "3rem", justifyContent: "flex-start", position: "relative", zIndex: 10 }}>
-              <span className="pipe" style={{ background: "rgba(255,255,255,0.05)" }}>Trends</span>
-              <span className="pipe-arr">→</span>
-              <span className="pipe" style={{ background: "rgba(255,255,255,0.05)" }}>Content</span>
-              <span className="pipe-arr">→</span>
-              <span className="pipe" style={{ background: "rgba(255,255,255,0.05)" }}>A/B Test</span>
-              <span className="pipe-arr">→</span>
-              <span className="pipe" style={{ background: "rgba(255,255,255,0.05)" }}>Publish</span>
-            </div>
-
-            <div className="feat-list" style={{ position: "relative", zIndex: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
-              {[
-                { ico: "📈", title: "Deep Analytics", desc: "Track post performance across all platforms in real-time." },
-                { ico: "🧪", title: "A/B Testing", desc: "Auto-generate variations and let the audience decide the winner." },
-                { ico: "⏱️", title: "Smart Schedule", desc: "AI predicts the optimal time to post for maximum engagement." },
-                { ico: "◷", title: "Visual Gen", desc: "On-brand imagery created on demand by AI models." },
-              ].map((item, i) => (
-                <div key={i} style={{ display: "flex", flexDirection: "column" }}>
-                  <div style={{ fontSize: "2rem", color: "#60a5fa", marginBottom: "1rem" }}>{item.ico}</div>
-                  <h4 style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "0.5rem" }}>{item.title}</h4>
-                  <p style={{ fontSize: "0.9rem", color: "var(--ink-3)" }}>{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
+          <div className="pipeline" style={{ justifyContent: "flex-start", marginBottom: "2rem" }}>
+            <span className="pipe" style={{ background: "rgba(255,255,255,0.05)" }}>Trends</span>
+            <span className="pipe-arr">→</span>
+            <span className="pipe" style={{ background: "rgba(255,255,255,0.05)" }}>Content</span>
+            <span className="pipe-arr">→</span>
+            <span className="pipe" style={{ background: "rgba(255,255,255,0.05)" }}>Publish</span>
+          </div>
+        </ProductCard>
 
         {/* FUTURE LABS */}
-        <div className="reveal">
-          <motion.div className="glass-panel" style={{ textAlign: "center", padding: "clamp(3rem, 6vw, 6rem)", y: y1 }}>
-            <span className="eyebrow" style={{ display: "block", marginBottom: "1.5rem" }}>Product 04 — Research</span>
-            <h3 className="display" style={{ marginBottom: "2rem" }}>Future Labs</h3>
-            <p className="lede" style={{ margin: "0 auto 4rem", maxWidth: "600px" }}>
-              The future is being built here. Experiments, autonomous agents, and prototypes shaping the next generation of Anithix products.
-            </p>
-            <div className="lab-grid" style={{ maxWidth: "800px", margin: "0 auto", background: "transparent", border: "none", gap: "1rem" }}>
-              {[
-                { title: "AI Agents", desc: "Autonomous reasoning" },
-                { title: "Research", desc: "Pushing boundaries" },
-                { title: "Prototypes", desc: "Active testing" },
-                { title: "Ecosystem", desc: "Next expansions" },
-              ].map((item, i) => (
-                <div key={i} className="cell" style={{ padding: "2rem 1.5rem", borderRadius: "1rem" }}>
-                  <h4 style={{ fontWeight: 600, marginBottom: "0.5rem" }}>{item.title}</h4>
-                  <p style={{ fontSize: "0.8rem", color: "var(--ink-3)" }}>{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
+        <ProductCard
+          title="Future Labs"
+          subtitle="The future is being built here."
+          desc="Experiments, autonomous agents, and prototypes shaping the next generation of Anithix products. Deep research into agentic workflows and neural automation."
+          image="/images/futurelabs.png"
+          alignRight={true}
+        >
+          <div className="lab-grid" style={{ background: "transparent", border: "none", gap: "1rem", padding: 0 }}>
+            {[
+              { title: "AI Agents", desc: "Autonomous reasoning" },
+              { title: "Research", desc: "Pushing boundaries" },
+            ].map((item, i) => (
+              <div key={i} className="cell" style={{ padding: "1.5rem", borderRadius: "1rem", background: "rgba(255,255,255,0.03)" }}>
+                <h4 style={{ fontWeight: 600, marginBottom: "0.25rem" }}>{item.title}</h4>
+                <p style={{ fontSize: "0.8rem", color: "var(--ink-3)" }}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </ProductCard>
       </div>
     </section>
   );

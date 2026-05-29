@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useEffect } from "react";
-import { motion, useInView } from "framer-motion";
+import { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useReveal } from "@/hooks/useReveal";
 
 const ACRONYM = [
   { letter: "A", word: "Advanced" },
@@ -21,89 +22,64 @@ const TRAITS = [
 ];
 
 export function Founder() {
+  const revealRef = useReveal();
   const sectionRef = useRef<HTMLDivElement>(null);
-  const inView = useInView(sectionRef, { once: true, margin: "-80px" });
 
-  useEffect(() => {
-    const handleReveal = () => {
-      if (sectionRef.current) {
-        const reveals = sectionRef.current.querySelectorAll(".reveal");
-        reveals.forEach((el) => {
-          el.classList.add("in");
-        });
-      }
-    };
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"],
+  });
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            handleReveal();
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
+  const y1 = useTransform(scrollYProgress, [0, 1], [100, -100]);
+  const y2 = useTransform(scrollYProgress, [0, 1], [150, -150]);
 
   return (
     <section
       id="founder"
       className="section"
       ref={sectionRef}
-      style={{ background: "var(--bg)" }}
+      style={{ background: "var(--bg)", paddingBottom: "10rem" }}
     >
       <div className="wrap">
-        <div className="section-head">
-          <span className="eyebrow reveal">
-            <span className="idx">07</span> / The Visionary
+        <div ref={revealRef} className="section-head reveal">
+          <span className="eyebrow" style={{ color: "var(--accent)" }}>
+            <span className="idx">07</span> // The Visionary
           </span>
-          <h2 className="h-sec reveal reveal-d1">
+          <h2 className="display-massive">
             Built by someone<br />
-            <span className="dim">obsessed with the future.</span>
+            <span className="dim" style={{ color: "var(--ink-3)" }}>obsessed with the future.</span>
           </h2>
         </div>
 
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "3rem",
-            marginTop: "3rem",
+            gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
+            gap: "4rem",
+            marginTop: "6rem",
             alignItems: "start",
           }}
         >
           {/* Left: Founder info */}
           <motion.div
-            initial={{ opacity: 0, x: -40 }}
-            animate={inView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-            className="reveal"
+            style={{ y: y1 }}
+            className="glass-panel p-10 md:p-16 rounded-[2rem] border border-white/5"
           >
             {/* Avatar */}
             <div
               style={{
-                width: "80px",
-                height: "80px",
-                borderRadius: "8px",
-                background: "var(--bg-1)",
-                border: "1px solid var(--line-2)",
+                width: "100px",
+                height: "100px",
+                borderRadius: "1rem",
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "2.2rem",
+                fontSize: "3rem",
                 fontWeight: 700,
                 color: "var(--ink)",
-                marginBottom: "1.5rem",
+                marginBottom: "2rem",
                 position: "relative",
               }}
             >
@@ -111,33 +87,36 @@ export function Founder() {
               <div
                 style={{
                   position: "absolute",
-                  bottom: "-4px",
-                  right: "-4px",
-                  width: "12px",
-                  height: "12px",
+                  bottom: "-6px",
+                  right: "-6px",
+                  width: "16px",
+                  height: "16px",
                   borderRadius: "50%",
                   background: "var(--live)",
-                  border: "2px solid var(--bg)",
+                  border: "3px solid var(--bg)",
+                  boxShadow: "0 0 10px var(--live)",
                 }}
               />
             </div>
 
-            <h3 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "0.3rem" }}>
+            <h3 className="display" style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>
               Saikumar
             </h3>
             <div
               style={{
-                fontSize: "0.85rem",
-                fontWeight: 500,
+                fontSize: "1rem",
+                fontWeight: 600,
                 color: "var(--accent)",
-                marginBottom: "1.5rem",
+                marginBottom: "2rem",
+                textTransform: "uppercase",
+                letterSpacing: "0.1em"
               }}
             >
               Founder & Builder, Anithix
             </div>
 
             {/* Bio */}
-            <div style={{ marginBottom: "2rem" }}>
+            <div style={{ marginBottom: "3rem" }}>
               {[
                 "Anithix wasn't born in a boardroom. It was born from a deep fascination with technology — a conviction that software can be simultaneously powerful, beautiful, and transformative.",
                 "As a full-stack developer with a passion for AI, I started building the tools I wished existed: an AI workspace that actually feels intelligent, a portfolio builder that works from your pocket, automation that doesn't require a PhD to configure.",
@@ -146,10 +125,10 @@ export function Founder() {
                 <p
                   key={i}
                   style={{
-                    fontSize: "0.95rem",
-                    lineHeight: 1.6,
+                    fontSize: "1.1rem",
+                    lineHeight: 1.7,
                     color: "var(--ink-3)",
-                    marginBottom: i === 2 ? 0 : "1rem",
+                    marginBottom: i === 2 ? 0 : "1.5rem",
                     fontWeight: i === 2 ? 500 : 400,
                   }}
                 >
@@ -163,24 +142,23 @@ export function Founder() {
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
-                gap: "1px",
-                background: "var(--line)",
-                border: "1px solid var(--line)",
+                gap: "1rem",
               }}
             >
               {TRAITS.map((trait, i) => (
                 <div
                   key={i}
-                  className="cell"
                   style={{
-                    padding: "1.2rem",
-                    background: "var(--bg)",
+                    padding: "1.5rem",
+                    background: "rgba(0,0,0,0.4)",
+                    borderRadius: "1rem",
+                    border: "1px solid rgba(255,255,255,0.05)",
                   }}
                 >
-                  <h6 style={{ fontSize: "0.85rem", fontWeight: 600, marginBottom: "0.4rem" }}>
+                  <h6 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.5rem", color: "var(--ink)" }}>
                     {trait.title}
                   </h6>
-                  <p style={{ fontSize: "0.75rem", color: "var(--ink-3)", lineHeight: 1.4 }}>
+                  <p style={{ fontSize: "0.9rem", color: "var(--ink-4)", lineHeight: 1.5 }}>
                     {trait.desc}
                   </p>
                 </div>
@@ -190,48 +168,47 @@ export function Founder() {
 
           {/* Right: Acronym + Quote */}
           <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            animate={inView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.9, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="reveal reveal-d1"
+            style={{ y: y2 }}
+            className="flex flex-col gap-8"
           >
             {/* Acronym section */}
-            <div className="cell" style={{ padding: "2rem", marginBottom: "1.5rem" }}>
+            <div className="glass-panel p-10 md:p-12 rounded-[2rem] border border-white/5">
               <div
                 style={{
-                  fontSize: "0.7rem",
-                  color: "var(--ink-4)",
+                  fontSize: "0.85rem",
+                  color: "var(--accent)",
                   fontFamily: "var(--mono)",
                   letterSpacing: "0.1em",
                   textTransform: "uppercase",
-                  marginBottom: "1.5rem",
+                  marginBottom: "2rem",
+                  fontWeight: 600
                 }}
               >
                 What ANITHIX stands for
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
                 {ACRONYM.map((item, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
                     <div
                       style={{
-                        width: "32px",
-                        height: "32px",
-                        borderRadius: "6px",
-                        background: "var(--bg-2)",
-                        border: "1px solid var(--line-2)",
+                        width: "48px",
+                        height: "48px",
+                        borderRadius: "12px",
+                        background: "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(255,255,255,0.1)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         color: "var(--accent)",
                         fontWeight: 700,
-                        fontSize: "0.9rem",
+                        fontSize: "1.2rem",
                         flexShrink: 0,
                       }}
                     >
                       {item.letter}
                     </div>
-                    <span style={{ fontSize: "0.95rem", color: "var(--ink)" }}>
+                    <span style={{ fontSize: "1.3rem", color: "var(--ink)", fontWeight: 500 }}>
                       {item.word}
                     </span>
                   </div>
@@ -240,20 +217,20 @@ export function Founder() {
             </div>
 
             {/* Quote */}
-            <div className="cell" style={{ padding: "1.5rem" }}>
+            <div className="glass-panel p-10 md:p-12 rounded-[2rem] border border-[var(--accent)]" style={{ background: "rgba(124, 58, 237, 0.05)" }}>
               <p
                 style={{
-                  fontSize: "0.9rem",
-                  color: "var(--ink-2)",
-                  lineHeight: 1.6,
-                  marginBottom: "1rem",
+                  fontSize: "1.2rem",
+                  color: "var(--ink)",
+                  lineHeight: 1.8,
+                  marginBottom: "1.5rem",
                   fontStyle: "italic",
                 }}
               >
                 "I build products that I would want to use every day — tools that feel intelligent,
                 look beautiful, and make the complex feel simple."
               </p>
-              <div style={{ fontSize: "0.75rem", color: "var(--ink-4)" }}>
+              <div style={{ fontSize: "0.9rem", color: "var(--accent)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}>
                 — Saikumar, Founder of Anithix
               </div>
             </div>

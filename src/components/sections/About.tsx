@@ -1,41 +1,47 @@
 "use client";
 
+import { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useReveal } from "@/hooks/useReveal";
 
 export function About() {
-  const ref = useReveal();
+  const revealRef = useReveal();
+  const sectionRef = useRef<HTMLDivElement>(null);
+  
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "center center"]
+  });
+
+  const y = useTransform(scrollYProgress, [0, 1], [100, 0]);
+  const opacity = useTransform(scrollYProgress, [0, 1], [0, 1]);
+
   return (
     <section
-      ref={ref}
+      ref={sectionRef}
       id="about"
       className="section"
-      style={{ background: "var(--bg)" }}
+      style={{ background: "var(--bg)", paddingBottom: "10rem" }}
     >
       <div className="wrap">
-        <div className="section-head">
-          <span className="eyebrow reveal">
-            <span className="idx">01</span> / Our Story
+        <div ref={revealRef} className="section-head reveal">
+          <span className="eyebrow" style={{ color: "var(--accent)" }}>
+            <span className="idx">01</span> // Our Story
           </span>
-          <h2 className="h-sec reveal reveal-d1">
+          <h2 className="display-massive">
             Built with purpose.<br />
-            <span className="dim">Designed for the future.</span>
+            <span className="dim" style={{ color: "var(--ink-3)" }}>Designed for the future.</span>
           </h2>
-          <p className="lede reveal reveal-d2">
+          <p className="lede reveal-d1" style={{ marginTop: "2rem", maxWidth: "700px" }}>
             We started with a simple belief: the best technology feels invisible, works effortlessly,
             and quietly transforms how you think and work.
           </p>
         </div>
 
         {/* Story cards grid */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "1px",
-            background: "var(--line)",
-            border: "1px solid var(--line)",
-            marginTop: "3rem",
-          }}
+        <motion.div
+          style={{ y, opacity }}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-24"
         >
           {[
             {
@@ -59,59 +65,54 @@ export function About() {
               text: "To create a network of intelligent products that redefine how people work, create, and connect in a technology-driven future.",
             },
           ].map((card, i) => (
-            <article
+            <div
               key={i}
-              className="cell reveal"
-              style={{
-                padding: "2rem",
-                background: "var(--bg)",
-                transitionDelay: `${i * 0.06}s`,
-              }}
+              className="glass-panel p-10 rounded-[2rem] border border-white/5"
             >
               <span
                 style={{
-                  fontSize: "0.75rem",
-                  color: "var(--ink-4)",
+                  fontSize: "0.85rem",
+                  color: "var(--accent)",
                   fontFamily: "var(--mono)",
                   letterSpacing: "0.1em",
                   textTransform: "uppercase",
                   display: "block",
-                  marginBottom: "0.8rem",
+                  marginBottom: "1.5rem",
                 }}
               >
                 {card.num}
               </span>
-              <h3 style={{ fontSize: "1.05rem", fontWeight: 600, marginBottom: "0.6rem", color: "var(--ink)" }}>
+              <h3 className="display mb-4" style={{ fontSize: "2rem" }}>
                 {card.title}
               </h3>
-              <p style={{ fontSize: "0.9rem", color: "var(--ink-3)", lineHeight: 1.5 }}>
+              <p style={{ fontSize: "1.1rem", color: "var(--ink-3)", lineHeight: 1.6 }}>
                 {card.text}
               </p>
-            </article>
+            </div>
           ))}
-        </div>
+        </motion.div>
 
         {/* Mission statement */}
-        <div style={{ textAlign: "center", marginTop: "4rem" }}>
+        <div style={{ textAlign: "center", marginTop: "10rem" }}>
           <blockquote
-            className="reveal"
+            className="reveal display-massive"
             style={{
-              fontSize: "clamp(1.8rem, 3.5vw, 2.2rem)",
+              fontSize: "clamp(2rem, 5vw, 4rem)",
               fontWeight: 400,
-              color: "var(--ink-2)",
-              lineHeight: 1.3,
-              marginBottom: "1rem",
+              color: "var(--ink)",
+              lineHeight: 1.2,
+              marginBottom: "2rem",
             }}
           >
-            Software should be <em>beautiful</em>, <em>useful</em>, and transformative.
+            Software should be <em>beautiful</em>, <br/><em>useful</em>, and transformative.
           </blockquote>
           <div
             className="reveal reveal-d1"
             style={{
-              fontSize: "0.75rem",
-              color: "var(--ink-4)",
+              fontSize: "1rem",
+              color: "var(--accent)",
               fontFamily: "var(--mono)",
-              letterSpacing: "0.1em",
+              letterSpacing: "0.2em",
               textTransform: "uppercase",
             }}
           >
