@@ -45,19 +45,21 @@ function ProductCard({
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
       
       <div className={`absolute inset-0 p-8 md:p-16 flex flex-col justify-end ${alignRight ? 'items-end' : 'items-start'}`}>
-        <motion.div style={{ y: panelY }} className="glass-panel max-w-2xl w-full backdrop-blur-3xl bg-black/40 border border-white/10 p-8 md:p-12 rounded-[1.5rem]">
-          <div className="mb-8">
+        <motion.div style={{ y: panelY }} className="glass-panel max-w-2xl w-full backdrop-blur-3xl bg-black/40 border border-white/10 p-10 md:p-14 rounded-[1.5rem]">
+          <div className="mb-6">
             <h3 className="display" style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)", marginBottom: "0.5rem" }}><JellyText text={title} /></h3>
             <p style={{ fontSize: "1.2rem", color: "var(--accent)", fontWeight: 500 }}>{subtitle}</p>
           </div>
-          <p className="lede" style={{ marginBottom: "2rem", fontSize: "1.1rem" }}>{desc}</p>
+          <p className="lede" style={{ marginBottom: "2.5rem", fontSize: "1.1rem" }}>{desc}</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           {children}
+          </div>
           
           <motion.button
             onClick={onWarp}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            className="flex items-center gap-2 text-sm font-semibold text-violet-300 hover:text-violet-200 transition-colors group mt-8"
+            className="flex items-center gap-2 text-sm font-semibold text-violet-300 hover:text-violet-200 transition-colors group mt-4"
             data-cursor="hover"
           >
             <Sparkles className="w-4 h-4" />
@@ -185,27 +187,6 @@ export function Products() {
           </div>
         </ProductCard>
 
-        {/* FUTURE LABS */}
-        <ProductCard
-          title="Future Labs"
-          subtitle="The future is being built here."
-          desc="Experiments, autonomous agents, and prototypes shaping the next generation of Anithix products. Deep research into agentic workflows and neural automation."
-          image="/images/futurelabs.png"
-          alignRight={true}
-          onWarp={() => triggerWarp("#")}
-        >
-          <div className="lab-grid" style={{ background: "transparent", border: "none", gap: "1rem", padding: 0 }}>
-            {[
-              { title: "AI Agents", desc: "Autonomous reasoning" },
-              { title: "Research", desc: "Pushing boundaries" },
-            ].map((item, i) => (
-              <div key={i} className="cell" style={{ padding: "1.5rem", borderRadius: "1rem", background: "rgba(255,255,255,0.03)" }}>
-                <h4 style={{ fontWeight: 600, marginBottom: "0.25rem" }}>{item.title}</h4>
-                <p style={{ fontSize: "0.8rem", color: "var(--ink-3)" }}>{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </ProductCard>
       </div>
     </section>
     </>

@@ -88,32 +88,11 @@ export const PRODUCTS = [
     ],
     status: "development",
   },
-  {
-    id: "future-labs",
-    name: "Future Labs",
-    category: "Research & Innovation",
-    tagline: "The future is being built here.",
-    description:
-      "A dedicated area showcasing future Anithix products, experiments, prototypes, and emerging technologies.",
-    color: "#8B5CF6",
-    accentColor: "#C4B5FD",
-    gradient: "from-violet-900 via-purple-800 to-fuchsia-900",
-    features: [
-      "AI Agents",
-      "Robotics",
-      "Automation Systems",
-      "Research Projects",
-      "Experimental Concepts",
-      "Upcoming Products",
-    ],
-    status: "future",
-  },
 ];
 
 export const NAV_LINKS = [
   { label: "Products", href: "/products" },
   { label: "Ecosystem", href: "/ecosystem" },
-  { label: "Technology", href: "/technology" },
   { label: "Timeline", href: "/timeline" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },

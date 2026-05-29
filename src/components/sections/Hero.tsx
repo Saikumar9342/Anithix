@@ -31,14 +31,6 @@ const CARDS = [
     tags: ["AI", "AUTOMATION"],
     status: "In Dev",
   },
-  {
-    id: "future-labs",
-    name: "Future Labs",
-    category: "Research & Innovation",
-    img: "/images/futurelabs.png",
-    tags: ["R&D", "CONCEPTS"],
-    status: "Future",
-  },
 ];
 
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -54,7 +46,7 @@ export function Hero() {
       ref={containerRef}
       id="hero"
       className="section relative min-h-[90vh] overflow-hidden flex flex-col justify-center"
-      style={{ background: "var(--bg)", paddingTop: "clamp(12rem, 15vw, 16rem)" }}
+      style={{ background: "var(--bg)", paddingTop: "6rem" }}
     >
       {/* Subtle grid texture */}
       <div
@@ -73,7 +65,7 @@ export function Hero() {
           
 
           {/* Headline */}
-          <div className="pointer-events-auto flex flex-col items-start gap-3" style={{ fontSize: "clamp(3.5rem, 6vw, 5.5rem)", lineHeight: 1.05, letterSpacing: "-0.04em", marginBottom: "2rem", fontWeight: 600 }}>
+          <div className="pointer-events-auto flex flex-col items-start gap-0" style={{ fontSize: "clamp(3.5rem, 6vw, 5.5rem)", lineHeight: 1.05, letterSpacing: "-0.04em", marginBottom: "2rem", fontWeight: 600 }}>
             <JellyText text="We build" />
             <JellyText text="intelligent" style={{ color: "var(--accent)" }} />
             <JellyText text="products." style={{ color: "var(--ink-3)" }} />

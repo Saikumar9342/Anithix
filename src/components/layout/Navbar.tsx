@@ -32,7 +32,7 @@ export function Navbar() {
           backdropFilter: scrolled ? "blur(24px)" : "blur(8px)",
         }}
       >
-        <div className="max-w-7xl mx-auto px-[var(--pad)] flex items-center justify-between h-20">
+        <div className="max-w-[1440px] mx-auto px-[var(--pad)] flex items-center justify-between h-20">
           {/* Logo — editorial mark */}
           <Link
             href="/"

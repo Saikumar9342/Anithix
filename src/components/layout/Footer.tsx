@@ -32,7 +32,7 @@ export function Footer() {
             <div>
               <h5 style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink)", fontWeight: 700, marginBottom: "1.5rem" }}>Ecosystem</h5>
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {["Graviton", "Atom", "Orbis", "Future Labs"].map(l => (
+                {["Graviton", "Atom", "Orbis"].map(l => (
                   <li key={l}>
                     <a href="#products" style={{ color: "var(--ink-3)", textDecoration: "none", transition: "color 0.2s ease" }} onMouseEnter={(e) => e.currentTarget.style.color = "var(--accent)"} onMouseLeave={(e) => e.currentTarget.style.color = "var(--ink-3)"}>{l}</a>
                   </li>
@@ -42,7 +42,7 @@ export function Footer() {
             <div>
               <h5 style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink)", fontWeight: 700, marginBottom: "1.5rem" }}>Company</h5>
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {["About", "Technology", "Timeline", "Contact"].map(l => (
+                {["About", "Timeline", "Contact"].map(l => (
                   <li key={l}>
                     <a href={`#${l.toLowerCase()}`} style={{ color: "var(--ink-3)", textDecoration: "none", transition: "color 0.2s ease" }} onMouseEnter={(e) => e.currentTarget.style.color = "var(--accent)"} onMouseLeave={(e) => e.currentTarget.style.color = "var(--ink-3)"}>{l}</a>
                   </li>

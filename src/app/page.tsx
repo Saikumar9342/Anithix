@@ -6,7 +6,6 @@ import { SmoothScroll } from "@/components/layout/SmoothScroll";
 import { Hero } from "@/components/sections/Hero";
 import { Products } from "@/components/sections/Products";
 import { Ecosystem } from "@/components/sections/Ecosystem";
-import { Technology } from "@/components/sections/Technology";
 import { AILab } from "@/components/sections/AILab";
 import { Timeline } from "@/components/sections/Timeline";
 import { About } from "@/components/sections/About";
@@ -23,7 +22,7 @@ export default function Home() {
         <Hero />
         <Products />
         <Ecosystem />
-        <Technology />
+
         <AILab />
         <Timeline />
         <About />

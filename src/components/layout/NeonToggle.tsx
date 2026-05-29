@@ -4,36 +4,52 @@ import { useState, useEffect } from "react";
 import { Lightbulb, LightbulbOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-function NeonParticles() {
-  const [particles, setParticles] = useState<any[]>([]);
+function Fireflies() {
+  const [flies, setFlies] = useState<any[]>([]);
 
   useEffect(() => {
-    const pts = Array.from({ length: 40 }).map((_, i) => ({
+    const pts = Array.from({ length: 28 }).map((_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
-      size: Math.random() * 3 + 1,
-      duration: Math.random() * 20 + 10,
-      delay: Math.random() * 5
+      size: Math.random() * 4 + 2,
+      driftX: (Math.random() - 0.5) * 30,
+      driftY: (Math.random() - 0.5) * 20,
+      duration: Math.random() * 12 + 8,
+      glowDuration: Math.random() * 3 + 2,
+      delay: Math.random() * 8,
+      hue: Math.random() > 0.6 ? "rgba(255, 200, 100, 0.9)" : "rgba(167, 139, 250, 0.85)",
+      glowColor: Math.random() > 0.6 ? "rgba(255, 200, 100, 0.6)" : "rgba(167, 139, 250, 0.5)",
     }));
-    setParticles(pts);
+    setFlies(pts);
   }, []);
 
   return (
     <div className="fixed inset-0 z-[-5] pointer-events-none overflow-hidden">
-      {particles.map(p => (
+      {flies.map(f => (
         <motion.div
-          key={p.id}
-          initial={{ opacity: 0, y: p.y + "vh" }}
-          animate={{ opacity: [0, 0.6, 0], y: [(p.y + 10) + "vh", p.y + "vh", (p.y - 10) + "vh"] }}
-          transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: "linear" }}
+          key={f.id}
           className="absolute rounded-full"
+          initial={{ opacity: 0, x: 0, y: 0 }}
+          animate={{
+            opacity: [0, 0.8, 0.3, 0.9, 0],
+            x: [0, f.driftX * 0.5, f.driftX, f.driftX * 0.7, 0],
+            y: [0, f.driftY * 0.3, f.driftY, f.driftY * 1.2, 0],
+          }}
+          transition={{
+            duration: f.duration,
+            delay: f.delay,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
           style={{
-            left: p.x + "vw",
-            width: p.size + "px",
-            height: p.size + "px",
-            background: "rgba(167, 139, 250, 0.8)",
-            boxShadow: "0 0 12px rgba(167, 139, 250, 1)",
+            left: f.x + "vw",
+            top: f.y + "vh",
+            width: f.size + "px",
+            height: f.size + "px",
+            background: f.hue,
+            boxShadow: `0 0 ${f.size * 4}px ${f.glowColor}, 0 0 ${f.size * 8}px ${f.glowColor}`,
+            borderRadius: "50%",
           }}
         />
       ))}
@@ -62,7 +78,7 @@ export function NeonToggle() {
             exit={{ opacity: 0 }}
             transition={{ duration: 1 }}
           >
-            <NeonParticles />
+            <Fireflies />
           </motion.div>
         )}
       </AnimatePresence>
