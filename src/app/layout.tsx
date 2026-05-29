@@ -37,12 +37,14 @@ export const viewport: Viewport = {
 };
 
 import { Preloader } from "@/components/layout/Preloader";
+import { NeonToggle } from "@/components/layout/NeonToggle";
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={hankenGrotesk.variable}>
       <body suppressHydrationWarning>
         <Preloader />
+        <NeonToggle />
         {children}
       </body>
     </html>
