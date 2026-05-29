@@ -1,18 +1,20 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { SmoothScroll } from "@/components/layout/SmoothScroll";
-import { Hero } from "@/components/sections/Hero";
 import { CursorGlowClient } from "@/components/animations/CursorGlowClient";
 
-export default function Home() {
+const About = dynamic(() => import("@/components/sections/About").then((m) => ({ default: m.About })));
+
+export default function AboutPage() {
   return (
     <SmoothScroll>
       <CursorGlowClient />
       <Navbar />
-      <main>
-        <Hero />
+      <main style={{ paddingTop: "4.5rem" }}>
+        <About />
       </main>
       <Footer />
     </SmoothScroll>
