@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { TIMELINE } from "@/lib/constants";
 import { useReveal } from "@/hooks/useReveal";
+import { JellyText } from "@/components/animations/JellyText";
 
 function TimelineCard({ item, isEven }: { item: any; isEven: boolean }) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -24,7 +25,7 @@ function TimelineCard({ item, isEven }: { item: any; isEven: boolean }) {
         className={`w-full md:w-[45%] glass-panel p-8 md:p-12 rounded-[2rem] border border-white/5 bg-black/40 backdrop-blur-xl shadow-2xl ${isEven ? 'md:text-right' : 'md:text-left'}`}
       >
         <span className="eyebrow inline-block mb-4" style={{ color: "var(--accent)", fontSize: "1.2rem", justifyContent: isEven ? 'flex-end' : 'flex-start' }}>{item.year}</span>
-        <h3 className="display mb-3" style={{ fontSize: "clamp(1.5rem, 3vw, 2.5rem)" }}>{item.title}</h3>
+        <h3 className="display mb-3" style={{ fontSize: "clamp(1.5rem, 3vw, 2.5rem)" }}><JellyText text={item.title} /></h3>
         <p className="text-[1.1rem] text-[var(--ink-3)] leading-relaxed">{item.description}</p>
       </motion.div>
       
@@ -53,16 +54,13 @@ export function Timeline() {
       id="timeline"
       className="section relative overflow-hidden"
       ref={sectionRef}
-      style={{ background: "var(--bg)", paddingBottom: "15rem" }}
+      style={{ background: "var(--bg)" }}
     >
-      <div className="wrap mb-24">
+      <div className="wrap">
         <div ref={revealRef} className="section-head reveal">
-          <div className="eyebrow" style={{ color: "var(--accent)" }}>
-            <span className="idx">06</span> // Our Journey
-          </div>
-          <h2 className="display-massive">
-            From vision<br />
-            <span style={{ color: "var(--ink-3)" }}>to reality.</span>
+          <h2 className="display-massive" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+            <JellyText text="From vision" />
+            <JellyText text="to reality." style={{ color: "var(--ink-3)" }} />
           </h2>
         </div>
       </div>

@@ -1,194 +1,74 @@
 "use client";
 
-import { SITE_CONFIG, PRODUCTS } from "@/lib/constants";
+import { SITE_CONFIG } from "@/lib/constants";
+import { JellyText } from "@/components/animations/JellyText";
 
 export function Footer() {
   return (
-    <footer
-      className="relative border-t overflow-hidden"
-      style={{
-        background: "var(--bg)",
-        borderColor: "var(--line)",
-      }}
-    >
+    <footer style={{ background: "var(--bg)", paddingTop: "10rem", paddingBottom: "2rem", borderTop: "1px solid rgba(255,255,255,0.05)", position: "relative", zIndex: 10 }}>
       {/* Background glow */}
       <div
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-96 h-48 rounded-full pointer-events-none blur-[80px]"
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-96 pointer-events-none blur-[120px] opacity-30"
         style={{
-          background: "rgba(196,188,255,0.04)",
-          transform: "translateX(-50%)",
+          background: "radial-gradient(ellipse at bottom, rgba(124, 58, 237, 0.4), transparent 70%)",
         }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-[var(--pad)] py-20">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-          {/* Brand */}
+      <div className="wrap relative z-10">
+        <div className="flex flex-col md:flex-row justify-between gap-16 mb-24">
+          
+          {/* Brand Info */}
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <span
-                className="text-sm font-600 tracking-wide"
-                style={{ color: "var(--ink)" }}
-              >
-                ANITHIX
-              </span>
+            <div style={{ fontSize: "1.5rem", fontWeight: 800, letterSpacing: "0.1em", color: "var(--ink)", marginBottom: "1.5rem" }}>
+              ANITHIX
             </div>
-            <p className="text-sm leading-relaxed mb-6" style={{ color: "var(--ink-3)" }}>
-              Building intelligent products that matter.
+            <p style={{ color: "var(--ink-3)", lineHeight: 1.6, maxWidth: "300px" }}>
+              Building the next generation of intelligent software, automation platforms, and developer tools.
             </p>
-            <div className="flex items-center gap-3">
-              {[
-                { href: SITE_CONFIG.github, label: "GH" },
-                { href: SITE_CONFIG.linkedin, label: "LI" },
-                { href: `mailto:${SITE_CONFIG.email}`, label: "@" },
-              ].map(({ href, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={label}
-                  className="w-8 h-8 rounded flex items-center justify-center text-xs font-500 transition-all"
-                  style={{
-                    border: "1px solid var(--line-2)",
-                    color: "var(--ink-3)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "var(--accent)";
-                    e.currentTarget.style.color = "var(--accent)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "var(--line-2)";
-                    e.currentTarget.style.color = "var(--ink-3)";
-                  }}
-                >
-                  {label}
-                </a>
-              ))}
+          </div>
+
+          {/* Links */}
+          <div style={{ display: "flex", gap: "4rem", flexWrap: "wrap" }}>
+            <div>
+              <h5 style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink)", fontWeight: 700, marginBottom: "1.5rem" }}>Ecosystem</h5>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "1rem" }}>
+                {["Graviton", "Atom", "Orbis", "Future Labs"].map(l => (
+                  <li key={l}>
+                    <a href="#products" style={{ color: "var(--ink-3)", textDecoration: "none", transition: "color 0.2s ease" }} onMouseEnter={(e) => e.currentTarget.style.color = "var(--accent)"} onMouseLeave={(e) => e.currentTarget.style.color = "var(--ink-3)"}>{l}</a>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-
-          {/* Products */}
-          <div>
-            <h4 className="eyebrow mb-4">Products</h4>
-            <ul className="space-y-2">
-              {PRODUCTS.map((p) => (
-                <li key={p.id}>
-                  <a
-                    href={`#${p.id}`}
-                    className="text-sm transition-colors"
-                    style={{ color: "var(--ink-3)" }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.color = "var(--ink)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.color = "var(--ink-3)")
-                    }
-                  >
-                    {p.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Company */}
-          <div>
-            <h4 className="eyebrow mb-4">Company</h4>
-            <ul className="space-y-2">
-              {[
-                "About",
-                "Ecosystem",
-                "Technology",
-                "Timeline",
-                "AI Lab",
-                "Founder",
-              ].map((item) => (
-                <li key={item}>
-                  <a
-                    href={`#${item.toLowerCase().replace(" ", "-")}`}
-                    className="text-sm transition-colors"
-                    style={{ color: "var(--ink-3)" }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.color = "var(--ink)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.color = "var(--ink-3)")
-                    }
-                  >
-                    {item}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Connect */}
-          <div>
-            <h4 className="eyebrow mb-4">Connect</h4>
-            <ul className="space-y-2">
-              <li>
-                <a
-                  href={`mailto:${SITE_CONFIG.email}`}
-                  className="text-sm transition-colors"
-                  style={{ color: "var(--ink-3)" }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.color = "var(--ink)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.color = "var(--ink-3)")
-                  }
-                >
-                  {SITE_CONFIG.email}
-                </a>
-              </li>
-              <li>
-                <a
-                  href={SITE_CONFIG.github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm transition-colors"
-                  style={{ color: "var(--ink-3)" }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.color = "var(--ink)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.color = "var(--ink-3)")
-                  }
-                >
-                  GitHub
-                </a>
-              </li>
-              <li>
-                <a
-                  href={SITE_CONFIG.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm transition-colors"
-                  style={{ color: "var(--ink-3)" }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.color = "var(--ink)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.color = "var(--ink-3)")
-                  }
-                >
-                  LinkedIn
-                </a>
-              </li>
-            </ul>
+            <div>
+              <h5 style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--ink)", fontWeight: 700, marginBottom: "1.5rem" }}>Company</h5>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "1rem" }}>
+                {["About", "Technology", "Timeline", "Contact"].map(l => (
+                  <li key={l}>
+                    <a href={`#${l.toLowerCase()}`} style={{ color: "var(--ink-3)", textDecoration: "none", transition: "color 0.2s ease" }} onMouseEnter={(e) => e.currentTarget.style.color = "var(--accent)"} onMouseLeave={(e) => e.currentTarget.style.color = "var(--ink-3)"}>{l}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
 
-        <div
-          className="border-t pt-8 flex flex-col md:flex-row items-center justify-between gap-4"
-          style={{ borderColor: "var(--line)" }}
-        >
-          <p className="text-sm" style={{ color: "var(--ink-4)" }}>
-            © {new Date().getFullYear()} ANITHIX. All rights reserved.
-          </p>
-          <p className="text-sm" style={{ color: "var(--ink-4)" }}>
-            Designed with precision. Built with care.
-          </p>
+        {/* Massive Typography */}
+        <div style={{ textAlign: "center", marginBottom: "4rem", position: "relative" }}>
+          <h2 style={{ fontSize: "clamp(4rem, 18vw, 20rem)", fontWeight: 800, letterSpacing: "-0.04em", color: "rgba(255,255,255,0.03)", userSelect: "none", lineHeight: 0.8 }}>
+            <JellyText text="ANITHIX" />
+          </h2>
+        </div>
+
+        {/* Bottom Bar */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "2rem", paddingTop: "2rem", borderTop: "1px solid rgba(255,255,255,0.05)", fontSize: "0.85rem", color: "var(--ink-4)" }}>
+          <div className="mono" style={{ textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            &copy; {new Date().getFullYear()} Anithix. All rights reserved.
+          </div>
+          <div style={{ display: "flex", gap: "2rem" }}>
+            <a href={SITE_CONFIG.github} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none", transition: "color 0.2s ease" }} onMouseEnter={(e) => e.currentTarget.style.color = "var(--ink)"} onMouseLeave={(e) => e.currentTarget.style.color = "var(--ink-4)"}>GitHub</a>
+            <a href={SITE_CONFIG.linkedin} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none", transition: "color 0.2s ease" }} onMouseEnter={(e) => e.currentTarget.style.color = "var(--ink)"} onMouseLeave={(e) => e.currentTarget.style.color = "var(--ink-4)"}>LinkedIn</a>
+            <a href={`mailto:${SITE_CONFIG.email}`} style={{ color: "inherit", textDecoration: "none", transition: "color 0.2s ease" }} onMouseEnter={(e) => e.currentTarget.style.color = "var(--ink)"} onMouseLeave={(e) => e.currentTarget.style.color = "var(--ink-4)"}>Email</a>
+          </div>
         </div>
       </div>
     </footer>

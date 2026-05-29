@@ -3,6 +3,7 @@
 import { useReveal } from "@/hooks/useReveal";
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { JellyText } from "@/components/animations/JellyText";
 
 function ProductCard({ 
   title, 
@@ -42,7 +43,7 @@ function ProductCard({
       <div className={`absolute inset-0 p-8 md:p-16 flex flex-col justify-end ${alignRight ? 'items-end' : 'items-start'}`}>
         <motion.div style={{ y: panelY }} className="glass-panel max-w-2xl w-full backdrop-blur-3xl bg-black/40 border border-white/10 p-8 md:p-12 rounded-[1.5rem]">
           <div className="mb-8">
-            <h3 className="display" style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)", marginBottom: "0.5rem" }}>{title}</h3>
+            <h3 className="display" style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)", marginBottom: "0.5rem" }}><JellyText text={title} /></h3>
             <p style={{ fontSize: "1.2rem", color: "var(--accent)", fontWeight: 500 }}>{subtitle}</p>
           </div>
           <p className="lede" style={{ marginBottom: "2rem", fontSize: "1.1rem" }}>{desc}</p>
@@ -57,16 +58,13 @@ export function Products() {
   const revealRef = useReveal();
 
   return (
-    <section ref={revealRef} id="products" className="section" style={{ background: "var(--bg)", overflow: "hidden", paddingBottom: "10rem" }}>
+    <section ref={revealRef} id="products" className="section" style={{ background: "var(--bg)", overflow: "hidden" }}>
       <div className="wrap" style={{ position: "relative", zIndex: 10 }}>
         {/* Massive Section Header */}
-        <div className="section-head reveal" style={{ marginBottom: "10rem" }}>
-          <span className="eyebrow" style={{ color: "var(--accent)" }}>
-            <span className="idx">03</span> // Products
-          </span>
-          <h2 className="display-massive">
-            A Connected <br />
-            <span style={{ color: "var(--ink-3)" }}>Suite.</span>
+        <div className="section-head reveal">
+          <h2 className="display-massive" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+            <JellyText text="A Connected" />
+            <JellyText text="Suite." style={{ color: "var(--ink-3)" }} />
           </h2>
           <p className="lede reveal reveal-d1" style={{ marginTop: "3rem", maxWidth: "800px", fontSize: "1.2rem" }}>
             Each built with obsession. Not just tools, but entire universes crafted for creators, developers, and visionaries.

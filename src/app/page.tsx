@@ -1,6 +1,5 @@
 "use client";
 
-import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { SmoothScroll } from "@/components/layout/SmoothScroll";
 import { Hero } from "@/components/sections/Hero";
@@ -18,7 +17,6 @@ export default function Home() {
   return (
     <SmoothScroll>
       <CursorGlowClient />
-      <Navbar />
       <main>
         <Hero />
         <Products />

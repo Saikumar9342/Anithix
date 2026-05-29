@@ -19,7 +19,7 @@
   --live:   #86d2a4;
   --font:   var(--font-hanken), "Hanken Grotesk", system-ui, -apple-system, sans-serif;
   --mono:   ui-monospace, "SF Mono", "Geist Mono", Menlo, monospace;
-  --maxw:   1280px;
+  --maxw:   100%;
   --pad:    clamp(1.25rem, 4vw, 3.5rem);
   --ease:   cubic-bezier(0.16, 1, 0.3, 1);
 }

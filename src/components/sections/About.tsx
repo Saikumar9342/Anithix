@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useReveal } from "@/hooks/useReveal";
+import { JellyText } from "@/components/animations/JellyText";
 
 export function About() {
   const revealRef = useReveal();
@@ -25,12 +26,9 @@ export function About() {
     >
       <div className="wrap">
         <div ref={revealRef} className="section-head reveal">
-          <span className="eyebrow" style={{ color: "var(--accent)" }}>
-            <span className="idx">01</span> // Our Story
-          </span>
-          <h2 className="display-massive">
-            Built with purpose.<br />
-            <span className="dim" style={{ color: "var(--ink-3)" }}>Designed for the future.</span>
+          <h2 className="display-massive" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+            <JellyText text="Built with purpose." />
+            <JellyText className="dim" text="Designed for the future." style={{ color: "var(--ink-3)" }} />
           </h2>
           <p className="lede reveal-d1" style={{ marginTop: "2rem", maxWidth: "700px" }}>
             We started with a simple belief: the best technology feels invisible, works effortlessly,

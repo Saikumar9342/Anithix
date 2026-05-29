@@ -2,8 +2,16 @@
 
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { PRODUCTS } from "@/lib/constants";
 import { useReveal } from "@/hooks/useReveal";
+import { JellyText } from "@/components/animations/JellyText";
+
+const CONCEPTS = [
+  { name: "Neural Automation", category: "Core Engine" },
+  { name: "Contextual Intelligence", category: "Data Layer" },
+  { name: "Infinite Scaling", category: "Architecture" },
+  { name: "Agentic Workflows", category: "Logic Layer" },
+  { name: "Real-time Synergy", category: "Network" },
+];
 
 export function Ecosystem() {
   const revealRef = useReveal();
@@ -22,17 +30,14 @@ export function Ecosystem() {
     <section
       id="ecosystem"
       ref={sectionRef}
-      className="section"
-      style={{ background: "var(--bg)", overflow: "hidden", padding: "15rem 0" }}
+      className="section relative"
+      style={{ background: "var(--bg)", overflow: "hidden" }}
     >
       <div className="wrap mb-24">
         <div ref={revealRef} className="section-head reveal">
-          <div className="eyebrow" style={{ color: "var(--accent)" }}>
-            <span className="idx">02</span> // Ecosystem
-          </div>
-          <h2 className="display-massive" style={{ fontSize: "clamp(3rem, 6vw, 6rem)", marginBottom: "1rem" }}>
-            One ecosystem. <br/> 
-            <span style={{ color: "var(--ink-3)" }}>Infinite possibilities.</span>
+          <h2 className="display-massive" style={{ fontSize: "clamp(3rem, 6vw, 6rem)", marginBottom: "1rem", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+            <JellyText text="One ecosystem." /> 
+            <JellyText text="Infinite possibilities." style={{ color: "var(--ink-3)" }} />
           </h2>
           <p className="lede reveal-d1" style={{ marginTop: "2rem", maxWidth: "800px" }}>
             Every Anithix product is part of a living, intelligent network designed to work together seamlessly. Data flows continuously, context is shared instantly, and intelligence scales infinitely.
@@ -45,7 +50,7 @@ export function Ecosystem() {
         
         {/* Row 1: Moves Left */}
         <motion.div style={{ x: x1 }} className="flex items-center gap-8 pl-[20vw]">
-          {PRODUCTS.map((p, i) => (
+          {CONCEPTS.map((p, i) => (
             <div key={i} className="glass-panel shrink-0 flex items-center gap-6 px-12 py-8 rounded-[2rem] border border-white/5 bg-white/[0.02] backdrop-blur-md">
               <span className="text-4xl" style={{ color: "var(--accent)" }}>◈</span>
               <div>
@@ -55,7 +60,7 @@ export function Ecosystem() {
             </div>
           ))}
           {/* Duplicates for infinite illusion */}
-          {PRODUCTS.map((p, i) => (
+          {CONCEPTS.map((p, i) => (
             <div key={`dup-${i}`} className="glass-panel shrink-0 flex items-center gap-6 px-12 py-8 rounded-[2rem] border border-white/5 bg-white/[0.02] backdrop-blur-md">
               <span className="text-4xl" style={{ color: "var(--accent)" }}>◈</span>
               <div>
@@ -68,7 +73,7 @@ export function Ecosystem() {
 
         {/* Row 2: Moves Right */}
         <motion.div style={{ x: x2 }} className="flex items-center gap-8 pl-[10vw]">
-          {[...PRODUCTS].reverse().map((p, i) => (
+          {[...CONCEPTS].reverse().map((p, i) => (
             <div key={i} className="glass-panel shrink-0 flex items-center gap-6 px-12 py-8 rounded-[2rem] border border-white/5 bg-white/[0.02] backdrop-blur-md">
               <span className="text-4xl" style={{ color: "var(--live)" }}>◇</span>
               <div>
@@ -78,7 +83,7 @@ export function Ecosystem() {
             </div>
           ))}
           {/* Duplicates for infinite illusion */}
-          {[...PRODUCTS].reverse().map((p, i) => (
+          {[...CONCEPTS].reverse().map((p, i) => (
             <div key={`dup2-${i}`} className="glass-panel shrink-0 flex items-center gap-6 px-12 py-8 rounded-[2rem] border border-white/5 bg-white/[0.02] backdrop-blur-md">
               <span className="text-4xl" style={{ color: "var(--live)" }}>◇</span>
               <div>

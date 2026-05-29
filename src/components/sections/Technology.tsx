@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useReveal } from "@/hooks/useReveal";
+import { JellyText } from "@/components/animations/JellyText";
 
 export function Technology() {
   const revealRef = useReveal();
@@ -22,17 +23,14 @@ export function Technology() {
     <section
       ref={sectionRef}
       id="technology"
-      className="section"
-      style={{ background: "var(--bg)", perspective: "2000px", paddingBottom: "15rem" }}
+      className="section relative overflow-hidden"
+      style={{ background: "var(--bg)", perspective: "2000px" }}
     >
       <div className="wrap">
-        <div ref={revealRef} className="section-head reveal" style={{ marginBottom: "8rem" }}>
-          <span className="eyebrow" style={{ color: "var(--accent)" }}>
-            <span className="idx">04</span> // Technology Stack
-          </span>
-          <h2 className="display-massive">
-            Engineered with<br />
-            <span className="dim">the best tools.</span>
+        <div ref={revealRef} className="section-head reveal">
+          <h2 className="display-massive" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+            <JellyText text="Engineered with" />
+            <JellyText className="dim" text="the best tools." />
           </h2>
           <p className="lede reveal-d1" style={{ marginTop: "2rem", maxWidth: "600px" }}>
             A modern, battle-tested technology stack powering the entire Anithix ecosystem.

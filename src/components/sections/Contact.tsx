@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { motion, useScroll, useSpring, useTransform, useVelocity } from "framer-motion";
 import { SITE_CONFIG } from "@/lib/constants";
 import { useReveal } from "@/hooks/useReveal";
+import { JellyText } from "@/components/animations/JellyText";
 
 export function Contact() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -34,23 +35,15 @@ export function Contact() {
   };
 
   return (
-    <section
-      id="contact"
-      ref={sectionRef}
-      className="section"
-      style={{ background: "var(--bg)", paddingBottom: "10rem" }}
-    >
-      <div className="wrap">
-        <div ref={revealRef} className="section-head reveal">
-          <span className="eyebrow" style={{ color: "var(--accent)" }}>
-            <span className="idx">08</span> // Get in Touch
-          </span>
+    <section id="contact" className="section relative" style={{ background: "var(--bg-1)" }} ref={sectionRef}>
+      <div ref={revealRef} className="wrap">
+        <div className="section-head reveal">
           
           {/* Velocity Skewed Text */}
           <motion.div style={{ skewY, transformOrigin: "left center" }}>
-            <h2 className="display-massive">
-              Let's build<br />
-              <span className="dim" style={{ color: "var(--ink-3)" }}>something great.</span>
+            <h2 className="display-massive" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+              <JellyText text="Let's build" />
+              <JellyText className="dim" text="something great." style={{ color: "var(--ink-3)" }} />
             </h2>
           </motion.div>
 

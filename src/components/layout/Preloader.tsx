@@ -55,24 +55,42 @@ export function Preloader() {
         >
           {/* Logo and Progress Container */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2rem" }}>
-            <h1 className="display" style={{ fontSize: "clamp(2rem, 5vw, 4rem)", letterSpacing: "0.2em", textTransform: "uppercase" }}>
-              ANITHIX
-            </h1>
             
-            {/* Progress Bar */}
-            <div style={{ position: "relative", width: "240px", height: "1px", background: "rgba(255,255,255,0.1)", overflow: "hidden" }}>
+            {/* Text Fill Loader */}
+            <div style={{ position: "relative", display: "inline-block" }}>
+              {/* Outline / Faded Text */}
+              <h1 className="display" style={{ 
+                fontSize: "clamp(3rem, 8vw, 6rem)", 
+                letterSpacing: "0.2em", 
+                textTransform: "uppercase", 
+                color: "rgba(255,255,255,0.1)",
+                margin: 0
+              }}>
+                ANITHIX
+              </h1>
+              
+              {/* Filled Text overlaying the faded text */}
               <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.1, ease: "linear" }}
                 style={{
                   position: "absolute",
-                  left: 0,
                   top: 0,
+                  left: 0,
                   bottom: 0,
-                  background: "var(--ink-1)",
+                  overflow: "hidden",
+                  width: `${progress}%`
                 }}
-              />
+              >
+                <h1 className="display" style={{ 
+                  fontSize: "clamp(3rem, 8vw, 6rem)", 
+                  letterSpacing: "0.2em", 
+                  textTransform: "uppercase", 
+                  color: "var(--accent)",
+                  margin: 0,
+                  whiteSpace: "nowrap"
+                }}>
+                  ANITHIX
+                </h1>
+              </motion.div>
             </div>
             
             {/* Percentage */}

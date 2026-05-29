@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Brain, Cpu, Zap, GitBranch, FlaskConical, Sparkles } from "lucide-react";
 import { useReveal } from "@/hooks/useReveal";
+import { JellyText } from "@/components/animations/JellyText";
 
 const LAB_ITEMS = [
   {
@@ -82,7 +83,7 @@ function StickyCard({ item, index }: { item: any; index: number }) {
           transformOrigin: "top center"
         }}
       >
-        <motion.div style={{ y: iconY }} className="p-8 rounded-[1.5rem] bg-white/5 border border-white/10 shrink-0">
+        <motion.div style={{ y: iconY }} className="shrink-0 pt-4">
           <item.icon size={64} color={item.color} strokeWidth={1} />
         </motion.div>
         
@@ -108,14 +109,12 @@ export function AILab() {
   const revealRef = useReveal();
 
   return (
-    <section id="ai-lab" className="section relative" style={{ background: "var(--bg)", paddingBottom: "20rem" }}>
-      <div className="wrap mb-24">
+    <section id="ai-lab" className="section relative" style={{ background: "var(--bg)" }}>
+      <div className="wrap">
         <div ref={revealRef} className="section-head reveal">
-          <div className="eyebrow" style={{ color: "var(--accent)" }}>
-            <span className="idx">05</span> // AI Lab
-          </div>
-          <h2 className="display-massive">
-            Where the future <br/> comes to life.
+          <h2 className="display-massive" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+            <JellyText text="Where the future" />
+            <JellyText text="comes to life." />
           </h2>
           <p className="lede reveal-d1" style={{ marginTop: "2rem", maxWidth: "600px" }}>
             Deep research, experimental systems, and emerging technologies being developed inside the Anithix lab.

@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useReveal } from "@/hooks/useReveal";
+import { JellyText } from "@/components/animations/JellyText";
 
 const ACRONYM = [
   { letter: "A", word: "Advanced" },
@@ -36,18 +37,14 @@ export function Founder() {
   return (
     <section
       id="founder"
-      className="section"
-      ref={sectionRef}
-      style={{ background: "var(--bg)", paddingBottom: "10rem" }}
+      className="section relative overflow-hidden"
+      style={{ background: "var(--bg)" }}
     >
       <div className="wrap">
         <div ref={revealRef} className="section-head reveal">
-          <span className="eyebrow" style={{ color: "var(--accent)" }}>
-            <span className="idx">07</span> // The Visionary
-          </span>
-          <h2 className="display-massive">
-            Built by someone<br />
-            <span className="dim" style={{ color: "var(--ink-3)" }}>obsessed with the future.</span>
+          <h2 className="display-massive" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+            <JellyText text="Built by someone" />
+            <JellyText className="dim" text="obsessed with the future." style={{ color: "var(--ink-3)" }} />
           </h2>
         </div>
 
