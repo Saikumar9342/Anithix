@@ -2,118 +2,234 @@
 
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useReveal } from "@/hooks/useReveal";
+import Link from "next/link";
 import { JellyText } from "@/components/animations/JellyText";
-import { HeroScene } from "@/components/animations/HeroScene";
+
+/* ── Gallery cards (Awwwards-style showcase) ─── */
+const CARDS = [
+  {
+    id: "graviton",
+    name: "Graviton",
+    category: "AI Workspace Platform",
+    img: "/images/graviton.png",
+    tags: ["AI", "WORKSPACE"],
+    status: "Launching",
+  },
+  {
+    id: "atom",
+    name: "Atom",
+    category: "Portfolio Platform",
+    img: "/images/atom.png",
+    tags: ["MOBILE", "PORTFOLIO"],
+    status: "Launching",
+  },
+  {
+    id: "orbis",
+    name: "Orbis",
+    category: "Content Automation",
+    img: "/images/orbis.png",
+    tags: ["AI", "AUTOMATION"],
+    status: "In Dev",
+  },
+  {
+    id: "future-labs",
+    name: "Future Labs",
+    category: "Research & Innovation",
+    img: "/images/futurelabs.png",
+    tags: ["R&D", "CONCEPTS"],
+    status: "Future",
+  },
+];
+
+const ease = [0.16, 1, 0.3, 1] as const;
 
 export function Hero() {
   const containerRef = useRef<HTMLElement>(null);
-  const revealRef = useReveal();
-  
-  // Parallax the background on scroll
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "end start"] });
-  const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
-  const opacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
+  const rightY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
+  const leftY = useTransform(scrollYProgress, [0, 1], ["0%", "-10%"]);
 
   return (
     <section
       ref={containerRef}
       id="hero"
-      className="relative min-h-screen overflow-hidden flex flex-col justify-center"
+      className="section relative min-h-[90vh] overflow-hidden flex flex-col justify-center"
+      style={{ background: "var(--bg)", paddingTop: "clamp(12rem, 15vw, 16rem)" }}
     >
-      {/* 3D WebGL Background */}
-      <motion.div style={{ y, opacity }} className="absolute inset-0 z-0 overflow-hidden">
-        <HeroScene />
+      {/* Subtle grid texture */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.04]"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)`,
+          backgroundSize: "80px 80px",
+          maskImage: "radial-gradient(ellipse 80% 60% at 50% 50%, black, transparent 80%)",
+        }}
+      />
+
+      <div className="wrap relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-12 items-center">
         
-        {/* Tech Grid Overlay */}
-        <div 
-          className="absolute inset-0 opacity-[0.06] pointer-events-none" 
-          style={{ 
-            backgroundImage: `linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)`,
-            backgroundSize: "60px 60px",
-            maskImage: "linear-gradient(to bottom, transparent, black 40%, black 60%, transparent)"
-          }} 
-        />
-      </motion.div>
-      
-      {/* Content */}
-      <div ref={revealRef} className="wrap relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center pointer-events-none min-h-screen pt-20 pb-32">
-        
-        {/* Left Side: Text Content */}
-        <div className="flex flex-col items-start text-left">
-          {/* Massive Headline */}
-          <h1 className="reveal reveal-d1 in display-massive pointer-events-auto" style={{ fontSize: "clamp(3.5rem, 8vw, 7rem)", lineHeight: 0.9, letterSpacing: "-0.04em", marginBottom: "2rem", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+        {/* ── LEFT COLUMN: Typography & CTA ── */}
+        <motion.div style={{ y: leftY }} className="flex flex-col items-start text-left">
+          
+
+          {/* Headline */}
+          <div className="pointer-events-auto flex flex-col items-start gap-3" style={{ fontSize: "clamp(3.5rem, 6vw, 5.5rem)", lineHeight: 1.05, letterSpacing: "-0.04em", marginBottom: "2rem", fontWeight: 600 }}>
             <JellyText text="We build" />
             <JellyText text="intelligent" style={{ color: "var(--accent)" }} />
             <JellyText text="products." style={{ color: "var(--ink-3)" }} />
-          </h1>
+          </div>
 
-          {/* Lede */}
-          <p className="lede reveal reveal-d2 in pointer-events-auto" style={{ maxWidth: "600px", fontSize: "1.25rem", color: "var(--ink-2)", marginBottom: "3rem" }}>
-            Anithix crafts AI-powered software, automation platforms, and developer tools designed for visionaries who demand precision and performance.
-          </p>
+          {/* Subline */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.2, ease }}
+            style={{
+              maxWidth: "480px",
+              color: "var(--ink-2)",
+              margin: "0 0 3rem 0",
+              fontSize: "1.1rem",
+              lineHeight: 1.6,
+            }}
+          >
+            AI-powered software, automation platforms, and developer tools for creators and teams who demand precision and performance.
+          </motion.p>
 
-          {/* Action Buttons */}
-          <div className="reveal reveal-d3 in flex flex-wrap gap-6 justify-start pointer-events-auto">
-            <a
+          {/* CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.3, ease }}
+            className="pointer-events-auto"
+          >
+            <Link
               href="#products"
-              className="flex items-center justify-center"
+              className="inline-flex items-center gap-3 font-500 transition-all duration-300"
               style={{
                 background: "var(--accent)",
                 color: "var(--bg)",
-                padding: "1.2rem 2.5rem",
-                borderRadius: "2rem",
-                fontSize: "1.1rem",
-                fontWeight: 700,
+                padding: "1rem 2.5rem",
+                borderRadius: "999px",
+                fontSize: "1rem",
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
-                transition: "transform 0.3s ease",
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.05)"}
-              onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
-            >
-              Explore the Suite
-            </a>
-            <a
-              href="#ecosystem"
-              className="flex items-center justify-center glass-panel"
-              style={{
-                background: "transparent",
-                color: "var(--ink)",
-                padding: "1.2rem 2.5rem",
-                borderRadius: "2rem",
-                fontSize: "1.1rem",
-                fontWeight: 600,
-                border: "1px solid rgba(255,255,255,0.1)",
-                transition: "all 0.3s ease",
+                fontWeight: 700,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "var(--accent)";
-                e.currentTarget.style.background = "rgba(124, 58, 237, 0.05)";
+                e.currentTarget.style.transform = "translateY(-3px) scale(1.02)";
+                e.currentTarget.style.boxShadow = "0 20px 40px rgba(124, 58, 237, 0.3)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
-                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.transform = "translateY(0) scale(1)";
+                e.currentTarget.style.boxShadow = "none";
               }}
             >
-              View Architecture
-            </a>
-          </div>
-        </div>
+              Explore the Suite
+              <span>→</span>
+            </Link>
+          </motion.div>
+        </motion.div>
 
-        {/* Right Side: Elegant 3D Object */}
-        <div className="reveal reveal-d2 in h-[500px] lg:h-[700px] w-full flex items-center justify-center relative">
-          <HeroScene />
-        </div>
+        {/* ── RIGHT COLUMN: Gallery Grid ── */}
+        <motion.div style={{ y: rightY }} className="grid grid-cols-2 gap-4 lg:gap-6 relative">
+          {/* Subtle glow behind cards */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-purple-500/10 blur-[100px] rounded-full pointer-events-none" />
+          
+          {CARDS.map((card, i) => (
+            <motion.div
+              key={card.id}
+              initial={{ opacity: 0, y: 40, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.4 + i * 0.1, ease }}
+              className={`relative ${i % 2 !== 0 ? 'mt-8 lg:mt-16' : ''}`} // Staggered layout
+            >
+              <Link href="/products" className="group block">
+                {/* Thumbnail */}
+                <div
+                  className="relative overflow-hidden rounded-2xl mb-4 transition-all duration-500 group-hover:-translate-y-2 group-hover:shadow-[0_20px_40px_rgba(124,58,237,0.15)]"
+                  style={{
+                    aspectRatio: "16 / 11",
+                    border: "1px solid rgba(255,255,255,0.05)",
+                    background: "var(--bg-1)",
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={card.img}
+                    alt={card.name}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 opacity-90 group-hover:opacity-100"
+                  />
+                  {/* hover veil */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-40 group-hover:opacity-70 transition-opacity duration-500" />
+                  
+                  {/* Status chip */}
+                  <span
+                    className="absolute top-4 left-4 inline-flex items-center gap-1.5"
+                    style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: "0.65rem",
+                      letterSpacing: "0.14em",
+                      textTransform: "uppercase",
+                      color: "var(--ink)",
+                      background: "rgba(124, 58, 237, 0.2)",
+                      backdropFilter: "blur(8px)",
+                      border: "1px solid rgba(124, 58, 237, 0.4)",
+                      borderRadius: "999px",
+                      padding: "0.3em 0.8em",
+                    }}
+                  >
+                    <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: "var(--accent)" }} />
+                    {card.status}
+                  </span>
+                </div>
+
+                {/* Name */}
+                <h3
+                  className="transition-colors duration-300 group-hover:text-[var(--accent)]"
+                  style={{
+                    fontSize: "1.1rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.02em",
+                    textTransform: "uppercase",
+                    color: "var(--ink)",
+                    marginBottom: "0.4rem",
+                  }}
+                >
+                  {card.name}
+                </h3>
+
+                {/* Tag labels */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  {card.tags.map((t) => (
+                    <span
+                      key={t}
+                      style={{
+                        fontFamily: "var(--mono)",
+                        fontSize: "0.65rem",
+                        letterSpacing: "0.12em",
+                        color: "var(--ink-4)",
+                      }}
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </motion.div>
       </div>
 
       {/* Scroll indicator */}
-      <div
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-10 reveal in reveal-d4 pointer-events-none"
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.5, duration: 1 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-10 pointer-events-none"
         style={{ color: "var(--ink-4)" }}
       >
         <div className="w-px h-16" style={{ background: "linear-gradient(to bottom, var(--accent), transparent)" }} />
-      </div>
+      </motion.div>
     </section>
   );
 }

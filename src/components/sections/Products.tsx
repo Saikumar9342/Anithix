@@ -1,16 +1,19 @@
 "use client";
 
 import { useReveal } from "@/hooks/useReveal";
-import { useRef } from "react";
+import { useRef, useState, useCallback } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { JellyText } from "@/components/animations/JellyText";
+import { WarpEffect } from "@/components/animations/WarpEffect";
+import { Sparkles, ArrowRight } from "lucide-react";
 
 function ProductCard({ 
   title, 
   subtitle, 
   desc, 
   image, 
-  alignRight, 
+  alignRight,
+  onWarp,
   children 
 }: {
   title: string;
@@ -18,6 +21,7 @@ function ProductCard({
   desc: string;
   image: string;
   alignRight?: boolean;
+  onWarp: () => void;
   children: React.ReactNode;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,6 +52,18 @@ function ProductCard({
           </div>
           <p className="lede" style={{ marginBottom: "2rem", fontSize: "1.1rem" }}>{desc}</p>
           {children}
+          
+          <motion.button
+            onClick={onWarp}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="flex items-center gap-2 text-sm font-semibold text-violet-300 hover:text-violet-200 transition-colors group mt-8"
+            data-cursor="hover"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span style={{ letterSpacing: "0.05em" }}>TRAVEL AT WARP SPEED</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </motion.button>
         </motion.div>
       </div>
     </div>
@@ -56,9 +72,26 @@ function ProductCard({
 
 export function Products() {
   const revealRef = useReveal();
+  const [warpActive, setWarpActive] = useState(false);
+  const [warpUrl, setWarpUrl] = useState<string | null>(null);
+
+  const triggerWarp = useCallback((url: string) => {
+    setWarpUrl(url);
+    setWarpActive(true);
+  }, []);
+
+  const handleWarpComplete = useCallback(() => {
+    setWarpActive(false);
+    if (warpUrl) {
+      window.location.href = warpUrl;
+      setWarpUrl(null);
+    }
+  }, [warpUrl]);
 
   return (
-    <section ref={revealRef} id="products" className="section" style={{ background: "var(--bg)", overflow: "hidden" }}>
+    <>
+      <WarpEffect active={warpActive} onComplete={handleWarpComplete} />
+      <section ref={revealRef} id="products" className="section" style={{ background: "var(--bg)", overflow: "hidden" }}>
       <div className="wrap" style={{ position: "relative", zIndex: 10 }}>
         {/* Massive Section Header */}
         <div className="section-head reveal">
@@ -78,6 +111,7 @@ export function Products() {
           desc="Connect every AI provider in one intelligent interface. Run local models via Ollama or connect cloud providers. Graviton wraps everything in a deeply customizable editorial interface featuring 'The Daily Brief' and 8 premium theme presets."
           image="/images/graviton.png"
           alignRight={false}
+          onWarp={() => triggerWarp("https://graviton.anithix.com")}
         >
           <div className="trust mb-8">
             {['Multi-Provider AI', 'Ollama Models', '8 Themes'].map(tag => (
@@ -105,6 +139,7 @@ export function Products() {
           desc="A mobile-first builder that lets you create and manage professional portfolio websites entirely from your smartphone. Upload a resume and watch AI transform it into a stunning live website in seconds."
           image="/images/atom.png"
           alignRight={true}
+          onWarp={() => triggerWarp("https://atom.anithix.com")}
         >
           <div className="trust mb-8 justify-end">
             {['Resume to Portfolio', 'Mobile Management', 'Live Sync'].map(tag => (
@@ -134,6 +169,7 @@ export function Products() {
           desc="An AI Media OS that discovers trends, writes content, generates visuals, and publishes on autopilot. Features an advanced Analytics Dashboard, AI-driven A/B Testing, and Smart Scheduling."
           image="/images/orbis.png"
           alignRight={false}
+          onWarp={() => triggerWarp("https://orbis.anithix.com")}
         >
           <div className="trust mb-8">
             {['AI Media OS', 'A/B Testing', 'Smart Schedule'].map(tag => (
@@ -156,6 +192,7 @@ export function Products() {
           desc="Experiments, autonomous agents, and prototypes shaping the next generation of Anithix products. Deep research into agentic workflows and neural automation."
           image="/images/futurelabs.png"
           alignRight={true}
+          onWarp={() => triggerWarp("#")}
         >
           <div className="lab-grid" style={{ background: "transparent", border: "none", gap: "1rem", padding: 0 }}>
             {[
@@ -171,5 +208,6 @@ export function Products() {
         </ProductCard>
       </div>
     </section>
+    </>
   );
 }
