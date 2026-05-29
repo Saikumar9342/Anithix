@@ -36,6 +36,7 @@ export function Founder() {
 
   return (
     <section
+      ref={sectionRef}
       id="founder"
       className="section relative overflow-hidden"
       style={{ background: "var(--bg)" }}
