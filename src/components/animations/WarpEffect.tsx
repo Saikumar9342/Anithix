@@ -187,7 +187,7 @@ export function WarpEffect({ active, onComplete }: WarpEffectProps) {
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 9999,
+        zIndex: 100000,
         pointerEvents: "none",
         display: "block",
       }}

@@ -5,6 +5,7 @@ import { motion, useScroll, useSpring, useTransform, useVelocity } from "framer-
 import { SITE_CONFIG } from "@/lib/constants";
 import { useReveal } from "@/hooks/useReveal";
 import { JellyText } from "@/components/animations/JellyText";
+import { BlackHole } from "@/components/animations/BlackHole";
 
 export function Contact() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -31,7 +32,7 @@ export function Contact() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
+    setTimeout(() => setSubmitted(false), 7000);
   };
 
   return (
@@ -133,15 +134,7 @@ export function Contact() {
           {/* Contact form */}
           <div className="glass-panel reveal reveal-d1" style={{ padding: "3rem", borderRadius: "2rem", border: "1px solid rgba(255,255,255,0.05)" }}>
             {submitted ? (
-              <div style={{ textAlign: "center", padding: "4rem 0" }}>
-                <div style={{ fontSize: "4rem", marginBottom: "1rem", color: "var(--accent)" }}>✓</div>
-                <h3 className="display" style={{ fontSize: "2rem", marginBottom: "1rem" }}>
-                  Message sent!
-                </h3>
-                <p style={{ color: "var(--ink-3)", fontSize: "1.1rem" }}>
-                  Thanks for reaching out. We'll get back to you soon.
-                </p>
-              </div>
+              <BlackHole />
             ) : (
               <form onSubmit={handleSubmit}>
                 <div
