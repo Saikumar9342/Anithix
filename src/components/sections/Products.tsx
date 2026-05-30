@@ -99,8 +99,9 @@ export function Products() {
         <div className="section-head reveal">
           <h2 className="display-massive" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
             <JellyText text="A Connected" />
-            <JellyText text="Suite." style={{ color: "var(--ink-3)" }} />
+            <JellyText text="Suite." style={{ color: "var(--accent)" }} />
           </h2>
+          <div className="headline-mark" />
           <p className="lede reveal reveal-d1" style={{ marginTop: "3rem", maxWidth: "800px", fontSize: "1.2rem" }}>
             Each built with obsession. Not just tools, but entire universes crafted for creators, developers, and visionaries.
           </p>

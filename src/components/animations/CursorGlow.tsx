@@ -96,7 +96,7 @@ export function CursorGlow() {
             width: 4 - i * 0.2,
             height: 4 - i * 0.2,
             borderRadius: "50%",
-            background: `rgba(139,92,246,${Math.max(0, (1 - i / 15) * 0.5)})`,
+            background: `rgba(139,92,246,${Math.max(0, (1 - i / 15) * 0.28)})`,
             pointerEvents: "none",
             zIndex: 9997,
             filter: "blur(1px)",
@@ -107,7 +107,7 @@ export function CursorGlow() {
         />
       ))}
 
-      {/* Halo ring — spring-lagged */}
+      {/* Halo ring — spring-lagged. Subtle by default, expands on interactive elements. */}
       <motion.div
         style={{
           position: "fixed",
@@ -115,17 +115,17 @@ export function CursorGlow() {
           top: springY,
           x: "-50%",
           y: "-50%",
-          width: hovering ? 52 : clicking ? 32 : 40,
-          height: hovering ? 52 : clicking ? 32 : 40,
+          width: hovering ? 46 : clicking ? 24 : 30,
+          height: hovering ? 46 : clicking ? 24 : 30,
           borderRadius: "50%",
-          border: `1.5px solid rgba(139,92,246,${hovering ? 0.9 : 0.5})`,
-          boxShadow: `0 0 ${hovering ? 20 : 10}px rgba(139,92,246,${hovering ? 0.5 : 0.2})`,
+          border: `1px solid rgba(139,92,246,${hovering ? 0.8 : 0.28})`,
+          boxShadow: hovering ? "0 0 18px rgba(139,92,246,0.4)" : "none",
           pointerEvents: "none",
           zIndex: 9998,
           transition: "width 0.2s ease, height 0.2s ease, border-color 0.2s ease",
         }}
         initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: visible ? 1 : 0, opacity: visible ? 1 : 0 }}
+        animate={{ scale: visible ? 1 : 0, opacity: visible ? (hovering ? 1 : 0.6) : 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
       />
 
@@ -137,17 +137,17 @@ export function CursorGlow() {
           top: dotY,
           x: "-50%",
           y: "-50%",
-          width: hovering ? 6 : 5,
-          height: hovering ? 6 : 5,
+          width: hovering ? 6 : 4,
+          height: hovering ? 6 : 4,
           borderRadius: "50%",
           background: hovering ? "#C4B5FD" : "#8B5CF6",
-          boxShadow: `0 0 8px #8B5CF6`,
+          boxShadow: hovering ? "0 0 8px #8B5CF6" : "0 0 5px rgba(139,92,246,0.6)",
           pointerEvents: "none",
           zIndex: 9999,
           transition: "width 0.15s, height 0.15s, background 0.15s",
         }}
         initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: visible ? 1 : 0, opacity: visible ? 1 : 0 }}
+        animate={{ scale: visible ? 1 : 0, opacity: visible ? (hovering ? 1 : 0.7) : 0 }}
         transition={{ duration: 0.2 }}
       />
     </>

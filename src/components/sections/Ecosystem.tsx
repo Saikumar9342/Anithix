@@ -35,10 +35,11 @@ export function Ecosystem() {
     >
       <div className="wrap mb-24">
         <div ref={revealRef} className="section-head reveal">
-          <h2 className="display-massive" style={{ fontSize: "clamp(3rem, 6vw, 6rem)", marginBottom: "1rem", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-            <JellyText text="One ecosystem." /> 
-            <JellyText text="Infinite possibilities." style={{ color: "var(--ink-3)" }} />
+          <h2 className="display-massive" style={{ marginBottom: "0.5rem", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+            <JellyText text="One ecosystem." />
+            <JellyText text="Infinite possibilities." style={{ color: "var(--accent)" }} />
           </h2>
+          <div className="headline-mark" />
           <p className="lede reveal-d1" style={{ marginTop: "2rem", maxWidth: "800px" }}>
             Every Anithix product is part of a living, intelligent network designed to work together seamlessly. Data flows continuously, context is shared instantly, and intelligence scales infinitely.
           </p>

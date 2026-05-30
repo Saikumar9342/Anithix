@@ -45,8 +45,9 @@ export function Founder() {
         <div ref={revealRef} className="section-head reveal">
           <h2 className="display-massive" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
             <JellyText text="Built by someone" />
-            <JellyText className="dim" text="obsessed with the future." style={{ color: "var(--ink-3)" }} />
+            <JellyText text="obsessed with the future." style={{ color: "var(--accent)" }} />
           </h2>
+          <div className="headline-mark" />
         </div>
 
         <div

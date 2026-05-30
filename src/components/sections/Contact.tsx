@@ -43,8 +43,9 @@ export function Contact() {
           <motion.div style={{ skewY, transformOrigin: "left center" }}>
             <h2 className="display-massive" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
               <JellyText text="Let's build" />
-              <JellyText className="dim" text="something great." style={{ color: "var(--ink-3)" }} />
+              <JellyText className="dim" text="something great." style={{ color: "var(--accent)" }} />
             </h2>
+            <div className="headline-mark" />
           </motion.div>
 
           <p className="lede reveal-d1" style={{ marginTop: "2rem", maxWidth: "600px" }}>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { StarField } from "./StarField";
 
 const LETTERS = "ANITHIX".split("");
 
@@ -56,6 +57,9 @@ export function Preloader() {
             overflow: "hidden",
           }}
         >
+          {/* Starfield backdrop */}
+          <StarField position="absolute" opacity={0.85} count={150} />
+
           {/* Logo and Progress Container */}
           <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "2.4rem" }}>
 
@@ -77,15 +81,15 @@ export function Preloader() {
                 return (
                   <motion.span
                     key={i}
-                    className={active ? "star-text" : undefined}
                     style={{
                       display: "inline-block",
-                      color: active ? undefined : "rgba(255,255,255,0.08)",
-                      textShadow: active ? "0 0 28px rgba(167,139,250,0.55)" : "none",
+                      color: active ? "#ffffff" : "rgba(255,255,255,0.12)",
                     }}
                     animate={{
                       opacity: active ? 1 : 0.4,
-                      filter: active ? "blur(0px)" : "blur(7px)",
+                      filter: active
+                        ? "blur(0px) drop-shadow(0 0 22px rgba(255,255,255,0.45))"
+                        : "blur(7px)",
                       y: active ? 0 : 10,
                       scale: active ? 1 : 0.88,
                     }}

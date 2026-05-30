@@ -30,8 +30,9 @@ export function Technology() {
         <div ref={revealRef} className="section-head reveal">
           <h2 className="display-massive" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
             <JellyText text="Engineered with" />
-            <JellyText className="dim" text="the best tools." />
+            <JellyText text="the best tools." style={{ color: "var(--accent)" }} />
           </h2>
+          <div className="headline-mark" />
           <p className="lede reveal-d1" style={{ marginTop: "2rem", maxWidth: "600px" }}>
             A modern, battle-tested technology stack powering the entire Anithix ecosystem.
           </p>

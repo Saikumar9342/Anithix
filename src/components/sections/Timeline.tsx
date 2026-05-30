@@ -60,8 +60,9 @@ export function Timeline() {
         <div ref={revealRef} className="section-head reveal">
           <h2 className="display-massive" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
             <JellyText text="From vision" />
-            <JellyText text="to reality." style={{ color: "var(--ink-3)" }} />
+            <JellyText text="to reality." style={{ color: "var(--accent)" }} />
           </h2>
+          <div className="headline-mark" />
         </div>
       </div>
 

@@ -30,6 +30,7 @@ export function About() {
             <JellyText text="Built with purpose." />
             <JellyText className="dim" text="Designed for the future." style={{ color: "var(--ink-3)" }} />
           </h2>
+          <div className="headline-mark" />
           <p className="lede reveal-d1" style={{ marginTop: "2rem", maxWidth: "700px" }}>
             We started with a simple belief: the best technology feels invisible, works effortlessly,
             and quietly transforms how you think and work.

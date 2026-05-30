@@ -31,6 +31,14 @@ const CARDS = [
     tags: ["AI", "AUTOMATION"],
     status: "In Dev",
   },
+  {
+    id: "future-labs",
+    name: "Future Labs",
+    category: "Research & Innovation",
+    img: "/images/futurelabs.png",
+    tags: ["R&D", "CONCEPTS"],
+    status: "Future",
+  },
 ];
 
 const ease = [0.16, 1, 0.3, 1] as const;

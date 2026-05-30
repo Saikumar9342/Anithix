@@ -114,8 +114,9 @@ export function AILab() {
         <div ref={revealRef} className="section-head reveal">
           <h2 className="display-massive" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
             <JellyText text="Where the future" />
-            <JellyText text="comes to life." />
+            <JellyText text="comes to life." style={{ color: "var(--accent)" }} />
           </h2>
+          <div className="headline-mark" />
           <p className="lede reveal-d1" style={{ marginTop: "2rem", maxWidth: "600px" }}>
             Deep research, experimental systems, and emerging technologies being developed inside the Anithix lab.
           </p>
