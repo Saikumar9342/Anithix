@@ -73,6 +73,56 @@ body.neon-glow-active::after {
   border: 1px solid rgba(124, 58, 237, 0.3);
 }
 
+/* When an ambient sky theme is active, let it show behind the content.
+   Sections/body go transparent so the fixed sky layer (z-index -1) is visible;
+   a readability overlay inside the sky layer keeps text legible. */
+body.theme-active { background: transparent !important; }
+body.theme-active main { background: transparent !important; }
+body.theme-active .section,
+body.theme-active section { background: transparent !important; }
+
+/* Content cards become true glass so the sky shows through them */
+body.theme-active .glass-panel,
+body.theme-active .cell,
+body.theme-active .lab-cell {
+  background: rgba(18,18,24,0.38) !important;
+  backdrop-filter: blur(16px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(120%) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+}
+
+/* Starry galaxy text fill — used by the preloader letters */
+.star-text {
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  background-color: #4a3f86;
+  background-image:
+    radial-gradient(3px 3px at 8px 10px, #fff 0%, rgba(255,255,255,0.4) 50%, transparent 80%),
+    radial-gradient(2px 2px at 26px 30px, #fff 0%, transparent 75%),
+    radial-gradient(3.5px 3.5px at 44px 16px, #fff3d6 0%, rgba(255,243,214,0.4) 50%, transparent 80%),
+    radial-gradient(2px 2px at 14px 46px, #fff 0%, transparent 75%),
+    radial-gradient(3px 3px at 52px 50px, #dcd6ff 0%, rgba(220,214,255,0.4) 50%, transparent 80%),
+    radial-gradient(2px 2px at 34px 60px, #fff 0%, transparent 75%),
+    radial-gradient(3px 3px at 60px 34px, #fff 0%, rgba(255,255,255,0.4) 50%, transparent 80%),
+    radial-gradient(2.5px 2.5px at 6px 64px, #d6ecff 0%, transparent 75%),
+    radial-gradient(ellipse at 25% 35%, rgba(167,139,250,0.6), transparent 60%),
+    radial-gradient(ellipse at 78% 72%, rgba(96,165,250,0.5), transparent 55%);
+  background-size:
+    70px 70px, 70px 70px, 70px 70px, 70px 70px, 70px 70px,
+    70px 70px, 70px 70px, 70px 70px,
+    100% 100%, 100% 100%;
+  background-repeat:
+    repeat, repeat, repeat, repeat, repeat,
+    repeat, repeat, repeat,
+    no-repeat, no-repeat;
+  animation: starTextDrift 16s linear infinite;
+}
+@keyframes starTextDrift {
+  0%   { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  100% { background-position: 70px 35px, -70px 25px, 50px -30px, -60px 20px, 65px 40px, -50px -25px, 60px 30px, -65px -20px, 0 0, 0 0; }
+}
+
 ::selection { background: rgba(245,244,242,0.16); color: #fff; }
 
 ::-webkit-scrollbar { width: 6px; }

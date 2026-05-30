@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+const LETTERS = "ANITHIX".split("");
+
 export function Preloader() {
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -11,7 +13,7 @@ export function Preloader() {
     // Disable scroll while loading
     document.body.style.overflow = "hidden";
 
-    // Simulate cinematic fast loading
+    // Simulate cinematic slow loading
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
@@ -19,15 +21,15 @@ export function Preloader() {
           setTimeout(() => {
             setLoading(false);
             document.body.style.overflow = "";
-            
+
             // Dispatch a custom event so other components know loading finished
             window.dispatchEvent(new Event("preloaderFinished"));
-          }, 400); // Small pause at 100%
+          }, 600); // Pause at 100%
           return 100;
         }
-        return prev + Math.floor(Math.random() * 15) + 5;
+        return prev + Math.floor(Math.random() * 4) + 2;
       });
-    }, 50);
+    }, 130);
 
     return () => {
       clearInterval(interval);
@@ -51,51 +53,61 @@ export function Preloader() {
             justifyContent: "center",
             alignItems: "center",
             color: "var(--ink-1)",
+            overflow: "hidden",
           }}
         >
           {/* Logo and Progress Container */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2rem" }}>
-            
-            {/* Text Fill Loader */}
-            <div style={{ position: "relative", display: "inline-block" }}>
-              {/* Outline / Faded Text */}
-              <h1 className="display" style={{ 
-                fontSize: "clamp(3rem, 8vw, 6rem)", 
-                letterSpacing: "0.2em", 
-                textTransform: "uppercase", 
-                color: "rgba(255,255,255,0.1)",
-                margin: 0
-              }}>
-                ANITHIX
-              </h1>
-              
-              {/* Filled Text overlaying the faded text */}
-              <motion.div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  bottom: 0,
-                  overflow: "hidden",
-                  width: `${progress}%`
-                }}
-              >
-                <h1 className="display" style={{ 
-                  fontSize: "clamp(3rem, 8vw, 6rem)", 
-                  letterSpacing: "0.2em", 
-                  textTransform: "uppercase", 
-                  color: "var(--accent)",
-                  margin: 0,
-                  whiteSpace: "nowrap"
-                }}>
-                  ANITHIX
-                </h1>
-              </motion.div>
-            </div>
-            
-            {/* Percentage */}
-            <div style={{ fontFamily: "var(--mono)", fontSize: "0.85rem", color: "var(--ink-3)", letterSpacing: "0.1em" }}>
-              {Math.min(progress, 100)}%
+          <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "2.4rem" }}>
+
+            {/* Per-letter resolving loader */}
+            <h1
+              className="display"
+              style={{
+                fontSize: "clamp(3rem, 8vw, 6rem)",
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                margin: 0,
+                display: "flex",
+              }}
+            >
+              {LETTERS.map((ch, i) => {
+                const threshold = ((i + 1) / LETTERS.length) * 100;
+                const active = progress >= threshold - 1;
+                return (
+                  <motion.span
+                    key={i}
+                    className={active ? "star-text" : undefined}
+                    style={{
+                      display: "inline-block",
+                      color: active ? undefined : "rgba(255,255,255,0.08)",
+                      textShadow: active ? "0 0 28px rgba(167,139,250,0.55)" : "none",
+                    }}
+                    animate={{
+                      opacity: active ? 1 : 0.4,
+                      filter: active ? "blur(0px)" : "blur(7px)",
+                      y: active ? 0 : 10,
+                      scale: active ? 1 : 0.88,
+                    }}
+                    transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    {ch}
+                  </motion.span>
+                );
+              })}
+            </h1>
+
+            {/* Progress bar + percentage */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.8rem" }}>
+              <div style={{ width: "180px", height: "2px", background: "rgba(255,255,255,0.08)", borderRadius: "999px", overflow: "hidden" }}>
+                <motion.div
+                  style={{ height: "100%", background: "linear-gradient(90deg, #a78bfa, #60a5fa)", borderRadius: "999px" }}
+                  animate={{ width: `${Math.min(progress, 100)}%` }}
+                  transition={{ ease: "easeOut", duration: 0.2 }}
+                />
+              </div>
+              <div style={{ fontFamily: "var(--mono)", fontSize: "0.8rem", color: "var(--ink-3)", letterSpacing: "0.15em" }}>
+                {Math.min(progress, 100)}%
+              </div>
             </div>
           </div>
         </motion.div>
