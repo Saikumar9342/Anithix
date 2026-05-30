@@ -61,8 +61,9 @@ export function Preloader() {
 
             {/* Per-letter resolving loader */}
             <h1
-              className="display"
               style={{
+                fontFamily: "var(--font-space), sans-serif",
+                fontWeight: 700,
                 fontSize: "clamp(3rem, 8vw, 6rem)",
                 letterSpacing: "0.18em",
                 textTransform: "uppercase",
@@ -105,7 +106,7 @@ export function Preloader() {
                   transition={{ ease: "easeOut", duration: 0.2 }}
                 />
               </div>
-              <div style={{ fontFamily: "var(--mono)", fontSize: "0.8rem", color: "var(--ink-3)", letterSpacing: "0.15em" }}>
+              <div style={{ fontFamily: "var(--font-space), monospace", fontWeight: 500, fontSize: "0.85rem", color: "var(--ink-3)", letterSpacing: "0.2em" }}>
                 {Math.min(progress, 100)}%
               </div>
             </div>
