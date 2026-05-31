@@ -1,7 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
-import { ScrollWarp } from "@/components/animations/ScrollWarp";
+import { useRef, useEffect } from "react";
 import { motion, useScroll, useTransform, useMotionValue } from "framer-motion";
 
 const PRODUCTS = [
@@ -18,14 +17,10 @@ export function Hero() {
     offset: ["start start", "end end"],
   });
 
-  const [scrollProgress, setScrollProgress] = useState(0);
   const progress = useMotionValue(0);
 
   useEffect(() => {
-    return scrollYProgress.on("change", (v) => {
-      progress.set(v);
-      setScrollProgress(v);
-    });
+    return scrollYProgress.on("change", (v) => progress.set(v));
   }, [scrollYProgress, progress]);
 
   const afterPanelRef = useRef<HTMLDivElement>(null);
@@ -64,9 +59,6 @@ export function Hero() {
         id="hero"
         style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", background: "transparent" }}
       >
-        {/* Space Warp effect on scroll transition */}
-        <ScrollWarp progress={scrollProgress} />
-
         {/* Impact flash */}
         <motion.div
           className="absolute inset-0 pointer-events-none z-10"

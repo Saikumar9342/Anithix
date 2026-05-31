@@ -170,8 +170,11 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
   const asteroidRef = useRef<THREE.Group>(null);
   const asteroidGlowRef = useRef<THREE.Mesh>(null);
   const spaceshipRef = useRef<THREE.Group>(null);
-  const laserRef = useRef<THREE.Group>(null);
-  const debrisRefs = useRef<(THREE.Group | null)[]>(Array(DEBRIS_COUNT).fill(null));
+  const laserRef      = useRef<THREE.Group>(null);
+  const laserLightRef = useRef<THREE.PointLight>(null);
+  const explosionLightRef = useRef<THREE.PointLight>(null);
+  const explosionGroupRef = useRef<THREE.Group>(null);
+  const debrisRefs    = useRef<(THREE.Group | null)[]>(Array(DEBRIS_COUNT).fill(null));
   
   const currentScroll = useRef(0);
   const shakeT = useRef(0);
@@ -190,12 +193,13 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
   }, [shipActions]);
 
   // Travel path limits
-  const ASTEROID_START = { x: 3.8, y: 2.8, z: 0.0 };
-  const ASTEROID_END = { x: -1.5, y: -0.6, z: 0.5 };
-  
-  const PLANET_START = { x: -1.8, y: -0.9, z: 0.0 };
-  const PLANET_END = { x: -6.0, y: -4.0, z: -2.0 };
-  const PLANET_SCALE = 0.65; // Decreased size for a more balanced aesthetic
+  const ASTEROID_START   = { x: 4.5, y: -0.3, z: 1.5 };  // from right, lower
+  const ASTEROID_EXPLODE = { x: 2.2, y: -0.6, z: 1.3 };  // explodes lower so full explosion visible
+
+  // Planet: starts center, moves left on scroll
+  const PLANET_START = { x: 0.0,  y: -0.2, z: -1.0 };
+  const PLANET_END   = { x: -2.8, y: -0.5, z: -1.0 };
+  const PLANET_SCALE = 1.4;
 
   useFrame((state, delta) => {
     // Smooth scroll interpolation (creates beautiful Lenis momentum lag)
@@ -207,41 +211,40 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
     // 1. THE PLANET (saved, smaller, no lava planet cross-fade!)
     // ──────────────────────────────────────────────────────────────────────────
     if (planetRef.current) {
-      planetRef.current.rotation.y += delta * 0.06;
-      
-      // Drifts bottom-left as we scroll past the Hero section (p > 0.25)
-      const driftFactor = THREE.MathUtils.clamp((p - 0.15) / 0.25, 0, 1);
-      const easedDrift = 1 - Math.pow(1 - driftFactor, 3); // ease-out cubic
-      
+      planetRef.current.rotation.y += delta * 0.05;
+
+      // Planet moves left as soon as user starts scrolling (p 0 → 0.20)
+      const driftFactor = THREE.MathUtils.clamp(p / 0.20, 0, 1);
+      const easedDrift = 1 - Math.pow(1 - driftFactor, 3);
+
       planetRef.current.position.x = THREE.MathUtils.lerp(PLANET_START.x, PLANET_END.x, easedDrift);
       planetRef.current.position.y = THREE.MathUtils.lerp(PLANET_START.y, PLANET_END.y, easedDrift);
-      planetRef.current.position.z = THREE.MathUtils.lerp(PLANET_START.z, PLANET_END.z, easedDrift);
+      planetRef.current.position.z = PLANET_START.z;
       planetRef.current.scale.setScalar(PLANET_SCALE);
-      
-      // Gradually hide when completely off-screen to improve performance
-      planetRef.current.visible = p < 0.60;
+      planetRef.current.visible = p < 0.65;
     }
+
 
     // ──────────────────────────────────────────────────────────────────────────
     // 2. THE ASTEROID
     // ──────────────────────────────────────────────────────────────────────────
     // Approaching planet and getting destroyed at p = 0.15
-    const isAsteroidAlive = p < 0.15;
-    const asteroidFactor = THREE.MathUtils.clamp(p / 0.15, 0, 1);
-    const easedAsteroid = Math.pow(asteroidFactor, 3.5); // Starts slow, shoots fast!
+    // Asteroid: visible p=0.05→0.13, destroyed exactly when laser fires at p=0.08
+    const isAsteroidAlive = p >= 0.05 && p < 0.13;
+    const asteroidFactor = THREE.MathUtils.clamp((p - 0.05) / 0.08, 0, 1);
+    const easedAsteroid = Math.pow(asteroidFactor, 3); // slow start, rockets in
 
-    const ax = THREE.MathUtils.lerp(ASTEROID_START.x, ASTEROID_END.x, easedAsteroid);
-    const ay = THREE.MathUtils.lerp(ASTEROID_START.y, ASTEROID_END.y, easedAsteroid);
-    const az = THREE.MathUtils.lerp(ASTEROID_START.z, ASTEROID_END.z, easedAsteroid);
+    const ax = THREE.MathUtils.lerp(ASTEROID_START.x, ASTEROID_EXPLODE.x, easedAsteroid);
+    const ay = THREE.MathUtils.lerp(ASTEROID_START.y, ASTEROID_EXPLODE.y, easedAsteroid);
+    const az = THREE.MathUtils.lerp(ASTEROID_START.z, ASTEROID_EXPLODE.z, easedAsteroid);
 
     if (asteroidRef.current) {
-      asteroidRef.current.visible = isAsteroidAlive && p < 0.20;
+      asteroidRef.current.visible = isAsteroidAlive;
       asteroidRef.current.position.set(ax, ay, az);
-      asteroidRef.current.scale.setScalar(0.35);
-      
-      const spin = 1 + easedAsteroid * 12;
+      asteroidRef.current.scale.setScalar(0.55);
+      const spin = 0.3 + easedAsteroid * 1.2; // slow, realistic tumble
       asteroidRef.current.rotation.x += delta * spin;
-      asteroidRef.current.rotation.z += delta * spin * 0.5;
+      asteroidRef.current.rotation.z += delta * spin * 0.6;
     }
 
     if (asteroidGlowRef.current) {
@@ -262,22 +265,33 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
 
     // Define multi-section path coordinate spline based on page scroll
     if (p < 0.20) {
-      // HERO SECTION (p < 20%): Guarding top-left sky, aiming at asteroid
-      sx = -1.3;
-      sy = 0.4 + Math.sin(t * 1.5) * 0.05; // Hover floating
-      sz = 2.0;
-
-      if (p >= 0.08 && p < 0.15) {
-        // Firing pivot: Point directly at incoming asteroid
-        const dx = ax - sx;
-        const dy = ay - sy;
-        sRotY = Math.atan2(dx, az - sz) + Math.PI; // Face target
-        sRotX = -Math.atan2(dy, Math.sqrt(dx*dx + (az-sz)*(az-sz))) * 0.45;
+      if (p < 0.05) {
+        // Idle: bottom-left area in front of planet, hovering calmly
+        sx = -0.6 + Math.sin(t * 0.9) * 0.06;
+        sy = -0.5 + Math.sin(t * 1.1) * 0.05;
+        sz = 1.5;
+        sRotY = Math.PI * 0.15;
+        sRotX = Math.sin(t * 1.0) * 0.02;
+        sRotZ = Math.cos(t * 0.8) * 0.02;
+      } else if (p >= 0.05 && p < 0.16) {
+        // Ship moves right to intercept — gets between asteroid and planet
+        const interceptF = THREE.MathUtils.clamp((p - 0.05) / 0.11, 0, 1);
+        const interceptE = 1 - Math.pow(1 - interceptF, 2);
+        sx = THREE.MathUtils.lerp(-0.6, 0.4, interceptE) + Math.sin(t * 0.9) * 0.03;
+        sy = THREE.MathUtils.lerp(-0.5, 0.0, interceptE) + Math.sin(t * 1.1) * 0.03;
+        sz = 1.5;
+        const dx = ax - sx, dy = ay - sy, dz2 = az - sz;
+        sRotY = Math.atan2(dx, dz2);
+        sRotX = -Math.atan2(dy, Math.sqrt(dx * dx + dz2 * dz2)) * 0.5;
+        sRotZ = Math.sin(t * 1.2) * 0.01;
       } else {
-        // Calm float
-        sRotY = -Math.PI / 4; 
-        sRotX = Math.sin(t * 1.2) * 0.02;
-        sRotZ = Math.cos(t * 1.2) * 0.02;
+        // After firing — ship hovers at intercept position
+        sx = 0.4 + Math.sin(t * 0.9) * 0.04;
+        sy = 0.0 + Math.sin(t * 1.1) * 0.04;
+        sz = 1.5;
+        sRotY = -Math.PI * 0.5;
+        sRotX = Math.sin(t * 1.0) * 0.02;
+        sRotZ = Math.cos(t * 0.8) * 0.01;
       }
       
     } else if (p >= 0.20 && p < 0.45) {
@@ -416,25 +430,63 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
     // 4. LASER BEAM RAPID FIRING
     // ──────────────────────────────────────────────────────────────────────────
     if (laserRef.current) {
-      const isFiring = p >= 0.08 && p < 0.15;
+      const isFiring = p >= 0.08 && p < 0.13;
       laserRef.current.visible = isFiring;
-      
+
+      if (laserLightRef.current) {
+        laserLightRef.current.intensity = isFiring ? 6 + Math.sin(t * 30) * 3 : 0;
+      }
+
       if (isFiring) {
-        // Cyclical laser burst progression
         const burst = (t * 18) % 1;
-        const dx = ax - sx;
-        const dy = ay - sy;
-        const dz = az - sz;
-        
-        // Stretch and position parallel laser cylinders along firing vector
-        laserRef.current.position.set(sx + dx * burst, sy + dy * burst, sz + dz * burst);
-        laserRef.current.scale.set(1.0, 1.0, 1.8); // Maintain fine width, stretch length
-        
-        // Cylinder pointing rotation matrix
+        // Fire from ship nose — ship model's front is along -Z in its local space
+        // Get ship's world forward direction from its rotation matrix
+        const shipForward = new THREE.Vector3();
+        if (spaceshipRef.current) {
+          spaceshipRef.current.getWorldDirection(shipForward);
+        }
+        // Nose offset: move 0.25 units in ship's forward direction from ship center
+        const noseX = sx + shipForward.x * 0.25;
+        const noseY = sy + shipForward.y * 0.25;
+        const noseZ = sz + shipForward.z * 0.25;
+        const dx = ax - noseX;
+        const dy = ay - noseY;
+        const dz = az - noseZ;
+        laserRef.current.position.set(noseX + dx * burst, noseY + dy * burst, noseZ + dz * burst);
+        laserRef.current.scale.set(1.0, 1.0, 1.8);
         const dir = new THREE.Vector3(dx, dy, dz).normalize();
         const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
         laserRef.current.setRotationFromQuaternion(quat);
+        if (laserLightRef.current) {
+          laserLightRef.current.position.set(noseX + dx * 0.5, noseY + dy * 0.5, noseZ + dz * 0.5);
+        }
       }
+    }
+
+    // Explosion: compact burst — core flash + 2 expanding rings
+    // Explosion GLB: show at asteroid destroy point, scale up then fade
+    const exploding = p >= 0.12 && p < 0.24;
+    const ef = THREE.MathUtils.clamp((p - 0.12) / 0.12, 0, 1);
+    const EX = ASTEROID_EXPLODE.x, EY = ASTEROID_EXPLODE.y, EZ = ASTEROID_EXPLODE.z;
+
+    if (explosionGroupRef.current) {
+      explosionGroupRef.current.visible = exploding;
+      if (exploding) {
+        // Pop in fast, hold, then fade — scale drives the "burst" feel
+        const s = ef < 0.3 ? (ef / 0.3) * 0.5 : 0.5;
+        explosionGroupRef.current.scale.setScalar(s);
+        explosionGroupRef.current.position.set(EX, EY, EZ);
+        explosionGroupRef.current.rotation.y += delta * 0.5;
+        // Fade out by scaling down after peak
+        if (ef > 0.5) {
+          const fade = 1 - (ef - 0.5) / 0.5;
+          explosionGroupRef.current.scale.setScalar(0.5 * fade);
+        }
+      }
+    }
+    if (explosionLightRef.current) {
+      explosionLightRef.current.intensity = exploding ? Math.max(0, (1 - ef) * 25) : 0;
+      explosionLightRef.current.position.set(EX, EY, EZ);
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -506,6 +558,7 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
       {/* Lights */}
       <ambientLight intensity={1.8} />
       <pointLight position={[0, 6, 6]} intensity={3.5} color="#c084fc" />
+      <pointLight ref={laserLightRef} position={[0, 0, 2]} intensity={0} color="#8b5cf6" distance={8} />
       <directionalLight position={[4, 5, 5]} intensity={2.5} color="#38bdf8" />
       <directionalLight position={[0, 4, 8]} intensity={3.0} color="#ffffff" />
       
@@ -536,21 +589,37 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
       </group>
 
       {/* 3. Spaceship */}
-      <group ref={spaceshipRef} position={[-2.2, 1.6, 1.8]} scale={0.07}>
+      <group ref={spaceshipRef} position={[-0.6, -0.5, 1.5]} scale={0.12}>
         <primitive object={shipScene} />
       </group>
 
-      {/* 4. Dual Parallel Cyan Lasers */}
+      {/* Explosion GLB */}
+      <pointLight ref={explosionLightRef} position={[2.2, 0.5, 1.3]} intensity={0} color="#ff8c3a" distance={8} />
+      <group ref={explosionGroupRef} visible={false}>
+        <ModelBoundary fallback={<mesh><sphereGeometry args={[0.3,8,8]} /><meshStandardMaterial color="#ff6600" emissive="#ff3300" emissiveIntensity={4} transparent opacity={0.8} /></mesh>}>
+          <GLB path="/models/explosion.glb" scale={0.4} />
+        </ModelBoundary>
+      </group>
+
+      {/* 4. Violet plasma laser beams */}
       <group ref={laserRef} visible={false}>
-        {/* Left wingtip gun laser */}
-        <mesh position={[-0.08, 0, 0]}>
-          <cylinderGeometry args={[0.012, 0.012, 1.0, 6]} />
-          <meshBasicMaterial color="#06b6d4" toneMapped={false} />
+        {/* Core beam — bright violet */}
+        <mesh position={[-0.06, 0, 0]}>
+          <cylinderGeometry args={[0.018, 0.008, 1.0, 8]} />
+          <meshStandardMaterial color="#8b5cf6" emissive="#7c3aed" emissiveIntensity={8} toneMapped={false} />
         </mesh>
-        {/* Right wingtip gun laser */}
-        <mesh position={[0.08, 0, 0]}>
-          <cylinderGeometry args={[0.012, 0.012, 1.0, 6]} />
-          <meshBasicMaterial color="#06b6d4" toneMapped={false} />
+        <mesh position={[0.06, 0, 0]}>
+          <cylinderGeometry args={[0.018, 0.008, 1.0, 8]} />
+          <meshStandardMaterial color="#8b5cf6" emissive="#7c3aed" emissiveIntensity={8} toneMapped={false} />
+        </mesh>
+        {/* Outer glow — wide soft halo */}
+        <mesh position={[-0.06, 0, 0]}>
+          <cylinderGeometry args={[0.06, 0.03, 1.0, 8]} />
+          <meshStandardMaterial color="#a78bfa" emissive="#6d28d9" emissiveIntensity={3} transparent opacity={0.25} toneMapped={false} depthWrite={false} />
+        </mesh>
+        <mesh position={[0.06, 0, 0]}>
+          <cylinderGeometry args={[0.06, 0.03, 1.0, 8]} />
+          <meshStandardMaterial color="#a78bfa" emissive="#6d28d9" emissiveIntensity={3} transparent opacity={0.25} toneMapped={false} depthWrite={false} />
         </mesh>
       </group>
 
@@ -626,3 +695,4 @@ useGLTF.preload(SPACESHIP);
 useGLTF.preload(PLANET);
 useGLTF.preload(ASTEROID);
 useGLTF.preload(DEBRIS);
+useGLTF.preload("/models/explosion.glb");
