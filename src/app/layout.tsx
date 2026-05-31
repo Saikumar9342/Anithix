@@ -44,7 +44,6 @@ export const viewport: Viewport = {
 };
 
 import { Preloader } from "@/components/layout/Preloader";
-import { NeonToggle } from "@/components/layout/NeonToggle";
 import { CosmicBackground } from "@/components/layout/CosmicBackground";
 import { WarpToTop } from "@/components/layout/WarpToTop";
 
@@ -54,7 +53,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body suppressHydrationWarning>
         <CosmicBackground />
         <Preloader />
-        <NeonToggle />
         {children}
         <WarpToTop />
       </body>

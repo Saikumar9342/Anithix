@@ -4,9 +4,11 @@ import {
   Suspense,
   useRef,
   useEffect,
+  useState,
   Component,
   type ReactNode,
 } from "react";
+import { ScrollWarp } from "@/components/animations/ScrollWarp";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useGLTF, Environment, Html, useProgress } from "@react-three/drei";
 import * as THREE from "three";
@@ -308,34 +310,29 @@ function ImpactScene({ progress }: { progress: MotionValue<number> }) {
             <ModelBoundary fallback={
               <mesh>
                 <dodecahedronGeometry args={[0.15, 0]} />
-                <meshStandardMaterial color="#2a1a10" emissive="#ff3300" emissiveIntensity={DEBRIS_DATA[i].heat} roughness={0.95} />
+                <meshStandardMaterial
+                  color="#26262b"
+                  emissive="#d44000"
+                  emissiveIntensity={DEBRIS_DATA[i].heat * 0.15}
+                  roughness={0.9}
+                />
               </mesh>
             }>
               <GLB path={DEBRIS} scale={1} />
             </ModelBoundary>
           ) : (
-            // Lightweight procedural rocks for count > 40
+            // Lightweight procedural rocks for count > 40 (cooled, dark asteroids)
             <mesh>
               <dodecahedronGeometry args={[0.12 + seeded(i * 13) * 0.1, 0]} />
               <meshStandardMaterial
-                color="#1e1208"
-                emissive="#ff2200"
-                emissiveIntensity={DEBRIS_DATA[i].heat * 0.8}
+                color="#1a1a1e"
+                emissive="#d44000"
+                emissiveIntensity={DEBRIS_DATA[i].heat * 0.1}
                 roughness={0.95}
                 metalness={0.05}
               />
             </mesh>
           )}
-          {/* Heat glow halo */}
-          <mesh>
-            <sphereGeometry args={[0.2, 6, 6]} />
-            <meshStandardMaterial
-              color="#ff4400" emissive="#ff2200"
-              emissiveIntensity={DEBRIS_DATA[i].heat * 1.5}
-              transparent opacity={0.06 + DEBRIS_DATA[i].heat * 0.08}
-              side={THREE.BackSide} depthWrite={false}
-            />
-          </mesh>
         </group>
       ))}
 
@@ -382,9 +379,13 @@ export function Hero() {
     offset: ["start start", "end end"],
   });
 
+  const [scrollProgress, setScrollProgress] = useState(0);
   const progress = useMotionValue(0);
   useEffect(
-    () => scrollYProgress.on("change", (v) => progress.set(v)),
+    () => scrollYProgress.on("change", (v) => {
+      progress.set(v);
+      setScrollProgress(v);
+    }),
     [scrollYProgress, progress]
   );
 
@@ -419,7 +420,7 @@ export function Hero() {
     <div ref={containerRef} style={{ height: "500vh", position: "relative" }}>
       <section
         id="hero"
-        style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", background: "var(--bg)" }}
+        style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", background: "transparent" }}
       >
         {/* 3D Canvas */}
         <div className="absolute inset-0 z-0">
@@ -438,6 +439,9 @@ export function Hero() {
             </Suspense>
           </Canvas>
         </div>
+
+        {/* Space Warp effect on scroll transition */}
+        <ScrollWarp progress={scrollProgress} />
 
         {/* Impact flash */}
         <motion.div

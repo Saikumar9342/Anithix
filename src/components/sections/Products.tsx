@@ -122,7 +122,7 @@ function HorizontalSlide({
       style={{
         width: "100vw",
         height: "100vh",
-        background: bgColor,
+        background: "transparent",
         position: "relative",
         overflow: "hidden",
         display: "flex",
@@ -130,6 +130,13 @@ function HorizontalSlide({
       }}
       className="shrink-0 transition-colors duration-1000"
     >
+      {/* Soft color wash background glow (keeps stars visible!) */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-30"
+        style={{
+          background: `radial-gradient(circle at center, ${accentColor}1c 0%, transparent 65%)`
+        }}
+      />
       {/* Massive outline background text (Delassus styling) */}
       <div
         style={{
