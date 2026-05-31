@@ -76,7 +76,7 @@ export function Contact() {
           top: 0,
           height: "100vh",
           overflow: "hidden",
-          background: "#07151a",
+          background: "transparent",
           display: "flex",
           alignItems: "center",
         }}

@@ -306,7 +306,7 @@ export function Products() {
             top: 0,
             height: "100vh",
             overflow: "hidden",
-            background: "var(--bg)",
+            background: "transparent",
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",

@@ -8,6 +8,7 @@ import { Hero } from "@/components/sections/Hero";
 import { Products } from "@/components/sections/Products";
 import { Contact } from "@/components/sections/Contact";
 import { CursorGlowClient } from "@/components/animations/CursorGlowClient";
+import { SpaceCanvas } from "@/components/layout/SpaceCanvas";
 
 export default function Home() {
   useEffect(() => {
@@ -22,6 +23,7 @@ export default function Home() {
     <SmoothScroll>
       <CursorGlowClient />
       <Navbar />
+      <SpaceCanvas />
       <main>
         <Hero />
         <Products />
