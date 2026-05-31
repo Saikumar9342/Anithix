@@ -1,327 +1,442 @@
 "use client";
 
-import { useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
-import Link from "next/link";
-import { JellyText } from "@/components/animations/JellyText";
+import {
+  Suspense,
+  useRef,
+  useEffect,
+  Component,
+  type ReactNode,
+} from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { useGLTF, Environment, Html, useProgress } from "@react-three/drei";
+import * as THREE from "three";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useMotionValue,
+  type MotionValue,
+} from "framer-motion";
 
-const CARDS = [
-  {
-    id: "graviton",
-    name: "Graviton",
-    category: "AI Workspace Platform",
-    img: "/images/graviton.png",
-    tags: ["AI", "WORKSPACE"],
-    status: "Launching",
-  },
-  {
-    id: "atom",
-    name: "Atom",
-    category: "Portfolio Platform",
-    img: "/images/atom.png",
-    tags: ["MOBILE", "PORTFOLIO"],
-    status: "Launching",
-  },
-  {
-    id: "orbis",
-    name: "Orbis",
-    category: "Content Automation",
-    img: "/images/orbis.png",
-    tags: ["AI", "AUTOMATION"],
-    status: "In Dev",
-  },
+const PLANET = "/models/planet.glb";
+const ASTEROID = "/models/asteroid.glb";
+const LAVA = "/models/lava.glb";
+
+// ── Error boundary ────────────────────────────────────────────────────────────
+class ModelBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
+function FallbackSphere({
+  color,
+  emissive,
+  emissiveIntensity = 0.3,
+}: {
+  color: string;
+  emissive: string;
+  emissiveIntensity?: number;
+}) {
+  return (
+    <mesh>
+      <sphereGeometry args={[1.4, 64, 64]} />
+      <meshStandardMaterial
+        color={color}
+        emissive={emissive}
+        emissiveIntensity={emissiveIntensity}
+        roughness={0.7}
+        metalness={0.2}
+      />
+    </mesh>
+  );
+}
+
+function GLB({ path, scale }: { path: string; scale: number }) {
+  const { scene } = useGLTF(path);
+  return <primitive object={scene.clone()} scale={scale} />;
+}
+
+// ── 3D Scene ──────────────────────────────────────────────────────────────────
+function ImpactScene({ progress }: { progress: MotionValue<number> }) {
+  const redRef = useRef<THREE.Group>(null);
+  const lavaRef = useRef<THREE.Group>(null);
+  const asteroidRef = useRef<THREE.Group>(null);
+  const flashRef = useRef<THREE.PointLight>(null);
+  const groupRef = useRef<THREE.Group>(null);
+
+  useFrame((_, delta) => {
+    const p = progress.get();
+    const impact = 0.58;
+
+    if (redRef.current) redRef.current.rotation.y += delta * 0.05;
+    if (lavaRef.current) lavaRef.current.rotation.y += delta * 0.08;
+
+    // Planet group drifts bottom-left as user scrolls
+    if (groupRef.current) {
+      const move = THREE.MathUtils.clamp((p - 0.08) / 0.22, 0, 1);
+      const eased = move < 0.5 ? 2 * move * move : 1 - Math.pow(-2 * move + 2, 2) / 2;
+      groupRef.current.position.x = THREE.MathUtils.lerp(0, -2.4, eased);
+      groupRef.current.position.y = THREE.MathUtils.lerp(0, -1.2, eased);
+    }
+
+    // Planet cross-fade at impact
+    const beforeAmt = p < impact ? 1 : Math.max(0, 1 - (p - impact) / 0.05);
+    const afterAmt = p < impact ? 0 : Math.min(1, (p - impact) / 0.1);
+    if (redRef.current) {
+      redRef.current.scale.setScalar(1.6 * beforeAmt);
+      redRef.current.visible = beforeAmt > 0.01;
+    }
+    if (lavaRef.current) {
+      lavaRef.current.scale.setScalar(
+        afterAmt > 0.01 ? 1.6 * (0.5 + afterAmt * 0.5) : 0.0001
+      );
+      lavaRef.current.visible = afterAmt > 0.01;
+    }
+
+    // Asteroid: from top-right → planet's bottom-left position
+    if (asteroidRef.current) {
+      const aStart = 0.22;
+      const aEnd = impact + 0.02;
+      const a = THREE.MathUtils.clamp((p - aStart) / (aEnd - aStart), 0, 1);
+      const vis = p >= aStart - 0.01 && p <= aEnd;
+      asteroidRef.current.visible = vis;
+      const eased = a * a;
+      asteroidRef.current.position.set(
+        THREE.MathUtils.lerp(5, -2.1, eased),
+        THREE.MathUtils.lerp(3.8, -0.9, eased),
+        THREE.MathUtils.lerp(-1, 0.5, eased)
+      );
+      asteroidRef.current.scale.setScalar(THREE.MathUtils.lerp(0.3, 1.0, eased));
+      asteroidRef.current.rotation.x += delta * 2.5;
+      asteroidRef.current.rotation.z += delta * 1.8;
+    }
+
+    // Impact flash
+    if (flashRef.current) {
+      const f =
+        p > impact - 0.02 && p < impact + 0.1
+          ? 1 - Math.abs(p - impact) / 0.1
+          : 0;
+      flashRef.current.intensity = Math.max(0, f) * 80;
+    }
+  });
+
+  return (
+    <>
+      <ambientLight intensity={0.3} />
+      <directionalLight position={[5, 3, 5]} intensity={2.0} color="#fff" />
+      <directionalLight position={[-6, -2, -4]} intensity={0.7} color="#7c5cff" />
+      <pointLight
+        ref={flashRef}
+        position={[0, 0, 2]}
+        intensity={0}
+        color="#ff7b3a"
+        distance={20}
+      />
+
+      <group ref={groupRef}>
+        <group ref={redRef}>
+          <ModelBoundary
+            fallback={
+              <FallbackSphere color="#7a3b2e" emissive="#3a140c" emissiveIntensity={0.25} />
+            }
+          >
+            <GLB path={PLANET} scale={1} />
+          </ModelBoundary>
+        </group>
+
+        <group ref={lavaRef} visible={false}>
+          <ModelBoundary
+            fallback={
+              <FallbackSphere color="#1c0f0a" emissive="#ff5a1e" emissiveIntensity={1.1} />
+            }
+          >
+            <GLB path={LAVA} scale={1} />
+          </ModelBoundary>
+        </group>
+      </group>
+
+      {/* Asteroid in world space so it travels from top-right to planet */}
+      <group ref={asteroidRef} visible={false}>
+        <ModelBoundary fallback={<FallbackSphere color="#2a2a2e" emissive="#000" />}>
+          <GLB path={ASTEROID} scale={1} />
+        </ModelBoundary>
+      </group>
+
+      <Environment preset="night" />
+    </>
+  );
+}
+
+function Loader() {
+  const { progress } = useProgress();
+  return (
+    <Html center>
+      <div
+        style={{
+          fontFamily: "monospace",
+          color: "rgba(196,188,255,0.85)",
+          fontSize: "0.75rem",
+          letterSpacing: "0.3em",
+          textTransform: "uppercase",
+          whiteSpace: "nowrap",
+        }}
+      >
+        Loading… {Math.round(progress)}%
+      </div>
+    </Html>
+  );
+}
+
+const PRODUCTS = [
+  { name: "Graviton", role: "AI Workspace", color: "#a78bfa", desc: "Multi-provider AI in one editorial interface." },
+  { name: "Atom", role: "Portfolio Platform", color: "#06b6d4", desc: "Your portfolio, built from your pocket." },
+  { name: "Orbis", role: "Content Automation", color: "#10b981", desc: "Publish your content universe on autopilot." },
 ];
 
-const ease = [0.16, 1, 0.3, 1] as const;
 
+// ── Main Hero export ──────────────────────────────────────────────────────────
 export function Hero() {
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  // Tall scroll driver so the viewport stays sticky
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"],
   });
 
-  // 1. Giant text outline scaling down & fading out
-  const logoScale = useTransform(scrollYProgress, [0, 0.8], [1.8, 1]);
-  const logoOpacity = useTransform(scrollYProgress, [0, 0.6], [0.08, 0.02]);
-  const logoY = useTransform(scrollYProgress, [0, 1], ["0%", "-10%"]);
+  const progress = useMotionValue(0);
+  useEffect(
+    () => scrollYProgress.on("change", (v) => progress.set(v)),
+    [scrollYProgress, progress]
+  );
 
-  // 2. Left column (content block) glides up & fades out slowly on scroll
-  const leftY = useTransform(scrollYProgress, [0, 0.5], ["0px", "-80px"]);
-  const leftOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+  const afterPanelRef = useRef<HTMLDivElement>(null);
+  const heroPanelRef = useRef<HTMLDivElement>(null);
 
-  // 3. Grid line split translations
-  const lineLeftX = useTransform(scrollYProgress, [0, 1], ["0%", "-40%"]);
-  const lineRightX = useTransform(scrollYProgress, [0, 1], ["0%", "40%"]);
+  // Drive both panels entirely via DOM refs
+  useEffect(() => {
+    return scrollYProgress.on("change", (v) => {
+      // Hero panel: fade out as soon as user starts scrolling
+      const hero = heroPanelRef.current;
+      if (hero) {
+        const heroFade = Math.max(0, 1 - v / 0.15);
+        hero.style.opacity = String(heroFade);
+        hero.style.transform = `translateY(${(1 - heroFade) * -50}px)`;
+      }
+      // After panel: hidden until 0.64
+      const after = afterPanelRef.current;
+      if (after) {
+        const visible = v >= 0.64;
+        const fadeIn = Math.max(0, Math.min(1, (v - 0.65) / 0.10));
+        after.style.opacity = String(visible ? fadeIn : 0);
+        after.style.transform = `translateY(${Math.max(0, (1 - fadeIn) * 40)}px)`;
+        after.style.visibility = visible ? "visible" : "hidden";
+      }
+    });
+  }, [scrollYProgress]);
 
-  // 4. Showcase cards flying animations (Parallax offsets per card)
-  const card1Y = useTransform(scrollYProgress, [0, 1], ["0px", "-160px"]);
-  const card2Y = useTransform(scrollYProgress, [0, 1], ["0px", "-60px"]);
-  const card3Y = useTransform(scrollYProgress, [0, 1], ["0px", "-240px"]);
-
-  const card1Rotate = useTransform(scrollYProgress, [0, 1], [-4, -8]);
-  const card2Rotate = useTransform(scrollYProgress, [0, 1], [3, 8]);
-  const card3Rotate = useTransform(scrollYProgress, [0, 1], [-1, -3]);
+  const flashOpacity = useTransform(scrollYProgress, [0.55, 0.58, 0.64], [0, 0.85, 0]);
+  const hintOp = useTransform(scrollYProgress, [0, 0.04, 0.10], [1, 1, 0]);
 
   return (
-    <div ref={containerRef} style={{ height: "180vh", position: "relative" }}>
-      {/* Sticky viewport content */}
+    <div ref={containerRef} style={{ height: "500vh", position: "relative" }}>
       <section
         id="hero"
-        style={{
-          position: "sticky",
-          top: 0,
-          height: "100vh",
-          overflow: "hidden",
-          background: "var(--bg)",
-          display: "flex",
-          alignItems: "center",
-        }}
+        style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", background: "var(--bg)" }}
       >
-        {/* Subtle grid texture with line splitting */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.04] flex items-center justify-between">
-          <motion.div
-            style={{
-              x: lineLeftX,
-              width: "50%",
-              height: "100%",
-              backgroundImage: `linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)`,
-              backgroundSize: "80px 80px",
+        {/* 3D Canvas */}
+        <div className="absolute inset-0 z-0">
+          <Canvas
+            camera={{ position: [0, 0, 5], fov: 42 }}
+            gl={{
+              antialias: true,
+              alpha: true,
+              toneMapping: THREE.ACESFilmicToneMapping,
+              toneMappingExposure: 1.1,
             }}
-          />
-          <motion.div
-            style={{
-              x: lineRightX,
-              width: "50%",
-              height: "100%",
-              backgroundImage: `linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)`,
-              backgroundSize: "80px 80px",
-            }}
-          />
+            dpr={[1, 2]}
+          >
+            <Suspense fallback={<Loader />}>
+              <ImpactScene progress={progress} />
+            </Suspense>
+          </Canvas>
         </div>
 
-        {/* Massive background outline logo */}
+        {/* Impact flash */}
         <motion.div
+          className="absolute inset-0 pointer-events-none z-10"
           style={{
-            scale: logoScale,
-            opacity: logoOpacity,
-            y: logoY,
-            position: "absolute",
-            width: "100%",
-            textAlign: "center",
-            left: 0,
-            zIndex: 1,
-            pointerEvents: "none",
-            userSelect: "none",
+            background: "radial-gradient(circle at 30% 70%, #fff 0%, #ffd9a0 40%, transparent 75%)",
+            opacity: flashOpacity,
           }}
+        />
+
+        {/* Hero headline */}
+        <div
+          ref={heroPanelRef}
+          className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none text-center px-6"
+        >
+         
+          <motion.h1
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.1, delay: 0.45 }}
+            style={{
+              fontSize: "clamp(3.8rem, 8vw, 8rem)",
+              fontWeight: 900,
+              lineHeight: 0.95,
+              letterSpacing: "-0.04em",
+              textShadow: "0 0 80px rgba(0,0,0,0.8)",
+            }}
+          >
+            We build
+            <br />
+            <span style={{ color: "var(--accent)" }}>intelligent</span>
+            <br />
+            products.
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.65 }}
+            style={{
+              marginTop: "1.8rem",
+              maxWidth: "480px",
+              color: "rgba(255,255,255,0.55)",
+              fontSize: "1.05rem",
+              lineHeight: 1.6,
+            }}
+          >
+            AI-powered software, automation platforms, and developer tools
+            for creators who demand precision.
+          </motion.p>
+        </div>
+
+        {/* Scroll hint */}
+        <motion.div
+          style={{ opacity: hintOp }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none flex flex-col items-center gap-3"
         >
           <span
             style={{
-              fontSize: "clamp(8rem, 20vw, 24rem)",
-              fontWeight: 900,
-              letterSpacing: "-0.04em",
-              color: "transparent",
-              WebkitTextStroke: "2px rgba(255,255,255,0.7)",
-              lineHeight: 1,
+              fontFamily: "monospace",
+              fontSize: "0.58rem",
+              letterSpacing: "0.35em",
+              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.35)",
             }}
           >
-            ANITHIX
+            Scroll to witness impact
           </span>
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            style={{
+              width: "1px",
+              height: "48px",
+              background: "linear-gradient(to bottom, var(--accent), transparent)",
+            }}
+          />
         </motion.div>
 
-        {/* Global wrapper */}
-        <div className="wrap relative z-10 w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
-          {/* ── LEFT COLUMN: Text Content & CTA (Span 5) ── */}
-          <motion.div
-            style={{ y: leftY, opacity: leftOpacity }}
-            className="lg:col-span-5 flex flex-col items-start text-left"
-          >
-            {/* Headline */}
-            <div
-              className="pointer-events-auto flex flex-col items-start gap-1"
-              style={{
-                fontSize: "clamp(3.5rem, 5.5vw, 5.2rem)",
-                lineHeight: 1.0,
-                letterSpacing: "-0.04em",
-                marginBottom: "2rem",
-                fontWeight: 800,
-              }}
-            >
-              <JellyText text="We build" />
-              <JellyText text="intelligent" style={{ color: "var(--accent)" }} />
-              <JellyText text="products." style={{ color: "var(--ink-3)" }} />
-            </div>
-
-            {/* Subline */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9, delay: 0.2, ease }}
-              style={{
-                maxWidth: "420px",
-                color: "rgba(255,255,255,0.6)",
-                margin: "0 0 3rem 0",
-                fontSize: "1.05rem",
-                lineHeight: 1.6,
-              }}
-            >
-              AI-powered software, automation platforms, and developer tools for creators and teams who demand precision and performance.
-            </motion.p>
-
-            {/* CTA */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9, delay: 0.3, ease }}
-              className="pointer-events-auto"
-            >
-              <Link
-                href="#products"
-                className="inline-flex items-center gap-3 transition-all duration-300"
-                style={{
-                  background: "var(--accent)",
-                  color: "var(--bg)",
-                  padding: "1rem 2.2rem",
-                  borderRadius: "999px",
-                  fontSize: "0.85rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.1em",
-                  fontWeight: 700,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-3px) scale(1.02)";
-                  e.currentTarget.style.boxShadow = "0 20px 40px rgba(124, 58, 237, 0.3)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0) scale(1)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-              >
-                Explore the Suite
-                <span>→</span>
-              </Link>
-            </motion.div>
-          </motion.div>
-
-          {/* ── RIGHT COLUMN: Flying Staggered 3D Cards (Span 7) ── */}
-          <div className="lg:col-span-7 relative flex justify-end items-center h-[650px] w-full">
-            {/* Subtle glow behind cards */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-purple-500/10 blur-[120px] rounded-full pointer-events-none" />
-
-            {/* Card 1: Graviton (Top Left / Behind) */}
-            <motion.div
-              initial={{ opacity: 0, x: -100, y: 50, scale: 0.9 }}
-              animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
-              transition={{ duration: 1.2, delay: 0.4, ease }}
-              className="absolute left-[5%] top-[15%] w-[260px] h-[340px] z-10 rounded-[1.5rem] overflow-hidden border border-white/5 shadow-2xl"
-              style={{
-                y: card1Y,
-                rotate: card1Rotate,
-                background: "rgba(10,10,12,0.85)",
-                backdropFilter: "blur(20px)",
-                padding: "1.5rem",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-              }}
-            >
-              <div className="w-full h-[55%] rounded-[1rem] overflow-hidden border border-white/5 relative">
-                <img src={CARDS[0].img} alt={CARDS[0].name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                <span style={{ position: "absolute", top: "0.75rem", left: "0.75rem", fontSize: "0.6rem", background: "rgba(124, 58, 237, 0.4)", backdropFilter: "blur(8px)", padding: "0.3rem 0.6rem", borderRadius: "100px", color: "#fff", fontWeight: 700, letterSpacing: "0.1em" }}>{CARDS[0].status}</span>
-              </div>
-              <div>
-                <h4 style={{ fontSize: "1.1rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.02em", color: "var(--ink)", marginBottom: "0.25rem" }}>{CARDS[0].name}</h4>
-                <p style={{ fontSize: "0.75rem", color: "var(--ink-4)", marginBottom: "0.75rem" }}>{CARDS[0].category}</p>
-                <div style={{ display: "flex", gap: "0.4rem" }}>
-                  {CARDS[0].tags.map(t => (
-                    <span key={t} style={{ fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.05em", color: "var(--accent)", background: "rgba(124, 58, 237, 0.1)", padding: "0.2rem 0.5rem", borderRadius: "100px" }}>{t}</span>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Card 2: Atom (Center Main / Floating) */}
-            <motion.div
-              initial={{ opacity: 0, y: 150, scale: 0.85 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 1.4, delay: 0.5, ease }}
-              className="absolute left-[35%] top-[25%] w-[290px] h-[380px] z-30 rounded-[1.8rem] overflow-hidden border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.8)]"
-              style={{
-                y: card2Y,
-                rotate: card2Rotate,
-                background: "rgba(15,15,18,0.9)",
-                backdropFilter: "blur(30px)",
-                padding: "1.75rem",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-              }}
-            >
-              <div className="w-full h-[58%] rounded-[1.2rem] overflow-hidden border border-white/10 relative">
-                <img src={CARDS[1].img} alt={CARDS[1].name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                <span style={{ position: "absolute", top: "0.85rem", left: "0.85rem", fontSize: "0.6rem", background: "rgba(124, 58, 237, 0.5)", backdropFilter: "blur(8px)", padding: "0.3rem 0.7rem", borderRadius: "100px", color: "#fff", fontWeight: 700, letterSpacing: "0.1em" }}>{CARDS[1].status}</span>
-              </div>
-              <div>
-                <h4 style={{ fontSize: "1.3rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.02em", color: "var(--ink)", marginBottom: "0.25rem" }}>{CARDS[1].name}</h4>
-                <p style={{ fontSize: "0.8rem", color: "var(--ink-4)", marginBottom: "0.75rem" }}>{CARDS[1].category}</p>
-                <div style={{ display: "flex", gap: "0.4rem" }}>
-                  {CARDS[1].tags.map(t => (
-                    <span key={t} style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.05em", color: "var(--accent)", background: "rgba(124, 58, 237, 0.1)", padding: "0.2rem 0.6rem", borderRadius: "100px" }}>{t}</span>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Card 3: Orbis (Bottom Right / Forward) */}
-            <motion.div
-              initial={{ opacity: 0, x: 120, y: 100, scale: 0.9 }}
-              animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
-              transition={{ duration: 1.3, delay: 0.6, ease }}
-              className="absolute right-[5%] bottom-[10%] w-[250px] h-[320px] z-20 rounded-[1.5rem] overflow-hidden border border-white/5 shadow-2xl"
-              style={{
-                y: card3Y,
-                rotate: card3Rotate,
-                background: "rgba(10,10,12,0.85)",
-                backdropFilter: "blur(20px)",
-                padding: "1.5rem",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-              }}
-            >
-              <div className="w-full h-[52%] rounded-[1rem] overflow-hidden border border-white/5 relative">
-                <img src={CARDS[2].img} alt={CARDS[2].name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                <span style={{ position: "absolute", top: "0.75rem", left: "0.75rem", fontSize: "0.6rem", background: "rgba(124, 58, 237, 0.4)", backdropFilter: "blur(8px)", padding: "0.3rem 0.6rem", borderRadius: "100px", color: "#fff", fontWeight: 700, letterSpacing: "0.1em" }}>{CARDS[2].status}</span>
-              </div>
-              <div>
-                <h4 style={{ fontSize: "1.1rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.02em", color: "var(--ink)", marginBottom: "0.25rem" }}>{CARDS[2].name}</h4>
-                <p style={{ fontSize: "0.75rem", color: "var(--ink-4)", marginBottom: "0.75rem" }}>{CARDS[2].category}</p>
-                <div style={{ display: "flex", gap: "0.4rem" }}>
-                  {CARDS[2].tags.map(t => (
-                    <span key={t} style={{ fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.05em", color: "var(--accent)", background: "rgba(124, 58, 237, 0.1)", padding: "0.2rem 0.5rem", borderRadius: "100px" }}>{t}</span>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-
+        {/* After-impact panel — DOM ref controlled, starts hidden */}
+        <div
+          ref={afterPanelRef}
+          style={{
+            opacity: 0, visibility: "hidden", transform: "translateY(40px)",
+            position: "absolute", right: 0, top: 0, height: "100%", zIndex: 20,
+            display: "flex", flexDirection: "column", justifyContent: "center",
+            pointerEvents: "none", padding: "0 clamp(2.5rem, 5vw, 7rem) 0 1.5rem",
+            width: "min(50vw, 580px)",
+          }}
+        >
+          {/* Label */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "1.4rem" }}>
+            <div style={{ width: "2rem", height: "1px", background: "#ff7b3a" }} />
+            <span style={{
+              fontFamily: "monospace", fontSize: "0.62rem", letterSpacing: "0.3em",
+              textTransform: "uppercase", color: "#ff7b3a",
+            }}>
+              Impact — Genesis
+            </span>
           </div>
 
-        </div>
+          {/* Headline */}
+          <h2 style={{
+            fontSize: "clamp(2.8rem, 4vw, 4.2rem)", fontWeight: 900,
+            lineHeight: 1.0, letterSpacing: "-0.04em", marginBottom: "1.4rem",
+          }}>
+            From collision,<br />
+            <span style={{ color: "#ff7b3a" }}>creation.</span>
+          </h2>
 
-        {/* Scroll indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 1 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-10 pointer-events-none"
-          style={{ color: "var(--ink-4)" }}
-        >
-          <div className="w-px h-16" style={{ background: "linear-gradient(to bottom, var(--accent), transparent)" }} />
-        </motion.div>
+          <p style={{
+            fontSize: "0.9rem", lineHeight: 1.7,
+            color: "rgba(255,255,255,0.45)", marginBottom: "2.2rem", maxWidth: "34ch",
+          }}>
+            Pressure forged into brilliance. Anithix builds products that transform how people work, create, and connect.
+          </p>
+
+          {/* Product list — horizontal divider style */}
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {PRODUCTS.map((p, i) => (
+              <div key={p.name} style={{
+                display: "flex", alignItems: "center", gap: "1.1rem",
+                padding: "1rem 0",
+                borderTop: i === 0 ? "1px solid rgba(255,255,255,0.08)" : undefined,
+                borderBottom: "1px solid rgba(255,255,255,0.08)",
+              }}>
+                {/* Color dot */}
+                <div style={{
+                  width: "0.45rem", height: "0.45rem", borderRadius: "50%",
+                  background: p.color, boxShadow: `0 0 10px ${p.color}`,
+                  flexShrink: 0,
+                }} />
+                {/* Name */}
+                <span style={{
+                  fontSize: "0.95rem", fontWeight: 700, color: "var(--ink)",
+                  letterSpacing: "-0.01em", minWidth: "5rem",
+                }}>{p.name}</span>
+                {/* Role */}
+                <span style={{
+                  fontSize: "0.72rem", color: "rgba(255,255,255,0.35)",
+                  fontFamily: "monospace", letterSpacing: "0.05em",
+                }}>{p.role}</span>
+                {/* Arrow */}
+                <span style={{
+                  marginLeft: "auto", fontSize: "0.75rem",
+                  color: "rgba(255,255,255,0.2)",
+                }}>→</span>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <a href="#products" style={{
+            display: "inline-flex", alignItems: "center", gap: "0.5rem",
+            marginTop: "2rem", fontSize: "0.78rem", fontWeight: 700,
+            letterSpacing: "0.12em", textTransform: "uppercase",
+            color: "var(--bg)", background: "var(--accent)",
+            padding: "0.85rem 1.8rem", borderRadius: "100px",
+            pointerEvents: "auto", textDecoration: "none",
+            width: "fit-content",
+          }}>
+            Explore the suite →
+          </a>
+        </div>
       </section>
     </div>
   );
 }
+
+useGLTF.preload(PLANET);
+useGLTF.preload(ASTEROID);
+useGLTF.preload(LAVA);

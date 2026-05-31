@@ -90,9 +90,7 @@ export function Technology() {
             <div className="eyebrow" style={{ justifyContent: "center", marginBottom: "1rem", color: "var(--accent)" }}>
               Built for scale
             </div>
-            <p style={{ fontSize: "1.5rem", fontWeight: 500, color: "var(--ink-2)" }}>
-              Advanced · Next-gen · Intelligent · Technology · Hub for Innovation & eXcellence
-            </p>
+          
           </div>
         </motion.div>
       </div>
