@@ -159,9 +159,19 @@ export function Timeline() {
                     zIndex: 5,
                     flexShrink: 0,
                     width: "360px",
+                    transformStyle: "preserve-3d",
                   }}
-                  className="glass-panel p-8 md:p-10 rounded-[2.2rem] bg-black/45 backdrop-blur-3xl"
+                  className="glass-panel p-8 md:p-10 rounded-[2.2rem] bg-black/45 backdrop-blur-3xl overflow-hidden"
                 >
+                  {/* Blueprint tech grid overlay */}
+                  <div
+                    className="absolute inset-0 pointer-events-none opacity-[0.02]"
+                    style={{
+                      backgroundImage: `linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)`,
+                      backgroundSize: "20px 20px",
+                    }}
+                  />
+
                   {/* Glowing Node Dot connecting to center line */}
                   <div
                     style={{
@@ -178,41 +188,46 @@ export function Timeline() {
                     }}
                   />
 
-                  {/* Year Flag */}
-                  <span
-                    style={{
-                      fontSize: "1.1rem",
-                      fontWeight: 700,
-                      color: "var(--accent)",
-                      fontFamily: "var(--font-mono, monospace)",
-                      display: "block",
-                      marginBottom: "1rem",
-                    }}
-                  >
-                    {item.year}
-                  </span>
+                  <div style={{ transform: "translateZ(25px)", transformStyle: "preserve-3d" }}>
+                    {/* Year Flag */}
+                    <span
+                      style={{
+                        fontSize: "1.1rem",
+                        fontWeight: 700,
+                        color: "var(--accent)",
+                        fontFamily: "var(--font-mono, monospace)",
+                        display: "block",
+                        marginBottom: "1rem",
+                        transform: "translateZ(15px)"
+                      }}
+                    >
+                      {item.year}
+                    </span>
 
-                  <h3
-                    className="display mb-3"
-                    style={{
-                      fontSize: "1.6rem",
-                      fontWeight: 800,
-                      lineHeight: 1.1,
-                      letterSpacing: "-0.02em",
-                    }}
-                  >
-                    {item.title}
-                  </h3>
+                    <h3
+                      className="display mb-3"
+                      style={{
+                        fontSize: "1.6rem",
+                        fontWeight: 800,
+                        lineHeight: 1.1,
+                        letterSpacing: "-0.02em",
+                        transform: "translateZ(40px)"
+                      }}
+                    >
+                      {item.title}
+                    </h3>
 
-                  <p
-                    style={{
-                      fontSize: "0.95rem",
-                      lineHeight: 1.6,
-                      color: "rgba(255,255,255,0.6)",
-                    }}
-                  >
-                    {item.description}
-                  </p>
+                    <p
+                      style={{
+                        fontSize: "0.95rem",
+                        lineHeight: 1.6,
+                        color: "rgba(255,255,255,0.6)",
+                        transform: "translateZ(25px)"
+                      }}
+                    >
+                      {item.description}
+                    </p>
+                  </div>
                 </motion.div>
               );
             })}

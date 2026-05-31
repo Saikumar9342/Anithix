@@ -124,14 +124,23 @@ function StickyCard({ item, index }: { item: any; index: number }) {
           transformOrigin: "top center"
         }}
       >
+        {/* Blueprint tech grid overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.022]"
+          style={{
+            backgroundImage: `linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)`,
+            backgroundSize: "24px 24px",
+          }}
+        />
+
         {/* Floating Radial Cursor Glow Highlight */}
         <motion.div
           style={{
             position: "absolute",
             left: glowX,
             top: glowY,
-            width: "220px",
-            height: "220px",
+            width: "240px",
+            height: "240px",
             background: `radial-gradient(circle, ${item.color} 0%, transparent 70%)`,
             transform: "translate(-50%, -50%)",
             pointerEvents: "none",
@@ -139,7 +148,7 @@ function StickyCard({ item, index }: { item: any; index: number }) {
             mixBlendMode: "screen",
           }}
         />
-        <div className="shrink-0 pt-3" style={{ transform: "translateZ(20px)" }}>
+        <div className="shrink-0 pt-3" style={{ transform: "translateZ(30px)", transformStyle: "preserve-3d" }}>
           <div
             style={{
               width: "72px",
@@ -156,8 +165,8 @@ function StickyCard({ item, index }: { item: any; index: number }) {
           </div>
         </div>
         
-        <div style={{ flex: 1 }}>
-          <div className="flex items-center gap-3 mb-4">
+        <div style={{ flex: 1, transformStyle: "preserve-3d" }}>
+          <div className="flex items-center gap-3 mb-4" style={{ transform: "translateZ(25px)" }}>
             <span className="text-xs tracking-[0.2em] uppercase font-bold" style={{ color: item.color }}>{item.status}</span>
             <motion.div 
               className="w-1.5 h-1.5 rounded-full" 
@@ -166,8 +175,8 @@ function StickyCard({ item, index }: { item: any; index: number }) {
               transition={{ duration: 2, repeat: Infinity, delay: index * 0.25 }}
             />
           </div>
-          <h3 className="display mb-3" style={{ fontSize: "clamp(1.8rem, 3vw, 2.5rem)", fontWeight: 800 }}>{item.title}</h3>
-          <p className="text-[1.05rem] text-[var(--ink-3)] leading-relaxed max-w-2xl font-medium">{item.desc}</p>
+          <h3 className="display mb-3" style={{ fontSize: "clamp(1.8rem, 3vw, 2.5rem)", fontWeight: 800, transform: "translateZ(45px)", transformStyle: "preserve-3d" }}>{item.title}</h3>
+          <p className="text-[1.05rem] text-[var(--ink-3)] leading-relaxed max-w-2xl font-medium" style={{ transform: "translateZ(28px)" }}>{item.desc}</p>
         </div>
 
         {/* Index flag */}
@@ -178,7 +187,8 @@ function StickyCard({ item, index }: { item: any; index: number }) {
             fontFamily: "var(--font-mono, monospace)",
             color: "rgba(255,255,255,0.03)",
             alignSelf: "flex-end",
-            userSelect: "none"
+            userSelect: "none",
+            transform: "translateZ(10px)"
           }}
         >
           {String(index + 1).padStart(2, "0")}

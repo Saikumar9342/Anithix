@@ -83,6 +83,15 @@ function StoryCard({
       onMouseLeave={handleMouseLeave}
       className="glass-panel p-8 md:p-10 rounded-[2.2rem] border border-white/5 bg-black/45 backdrop-blur-3xl shadow-xl relative overflow-hidden"
     >
+      {/* Blueprint grid overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.02]"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)`,
+          backgroundSize: "20px 20px",
+        }}
+      />
+
       <motion.div
         style={{
           position: "absolute",
@@ -97,7 +106,7 @@ function StoryCard({
           mixBlendMode: "screen",
         }}
       />
-      <div style={{ transform: "translateZ(20px)" }}>
+      <div style={{ transform: "translateZ(25px)", transformStyle: "preserve-3d" }}>
         <span
           style={{
             fontSize: "0.75rem",
@@ -108,14 +117,15 @@ function StoryCard({
             display: "block",
             marginBottom: "1rem",
             fontWeight: 700,
+            transform: "translateZ(15px)"
           }}
         >
           {card.num}
         </span>
-        <h3 className="display mb-3" style={{ fontSize: "1.6rem", fontWeight: 800 }}>
+        <h3 className="display mb-3" style={{ fontSize: "1.6rem", fontWeight: 800, transform: "translateZ(40px)" }}>
           {card.title}
         </h3>
-        <p style={{ fontSize: "0.95rem", color: "rgba(255,255,255,0.65)", lineHeight: 1.6 }}>
+        <p style={{ fontSize: "0.95rem", color: "rgba(255,255,255,0.65)", lineHeight: 1.6, transform: "translateZ(25px)" }}>
           {card.text}
         </p>
       </div>

@@ -208,13 +208,66 @@ export function Ecosystem() {
           }}
         >
           <svg viewBox="0 0 200 200" fill="none" style={{ width: "100%", height: "100%" }}>
-            <circle cx="100" cy="100" r="80" stroke="var(--accent)" strokeWidth="0.25" strokeDasharray="3 3" />
-            <circle cx="100" cy="100" r="55" stroke="var(--live)" strokeWidth="0.2" strokeDasharray="6 3" />
-            <circle cx="100" cy="100" r="30" stroke="var(--accent)" strokeWidth="0.4" />
+            <defs>
+              <filter id="neon-glow-accent" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="1.2" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+              <filter id="neon-glow-live" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="1.0" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+              <radialGradient id="center-light" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="rgba(196,188,255,0.18)" />
+                <stop offset="100%" stopColor="rgba(8,8,10,0)" />
+              </radialGradient>
+            </defs>
+
+            {/* Glowing Core Background */}
+            <circle cx="100" cy="100" r="95" fill="url(#center-light)" />
+
+            {/* Orbit Lines with custom neon glows */}
+            <circle 
+              cx="100" 
+              cy="100" 
+              r="80" 
+              stroke="var(--accent)" 
+              strokeWidth="0.3" 
+              strokeDasharray="4 4" 
+              filter="url(#neon-glow-accent)"
+              className="animate-spin-dashed-slow"
+              style={{ transformOrigin: "center center" }}
+            />
+            <circle 
+              cx="100" 
+              cy="100" 
+              r="55" 
+              stroke="var(--live)" 
+              strokeWidth="0.25" 
+              strokeDasharray="8 4" 
+              filter="url(#neon-glow-live)"
+              className="animate-spin-dashed-fast"
+              style={{ transformOrigin: "center center" }}
+            />
+            <circle 
+              cx="100" 
+              cy="100" 
+              r="30" 
+              stroke="var(--accent)" 
+              strokeWidth="0.45" 
+              filter="url(#neon-glow-accent)"
+            />
+
             {/* Pulsing Orbiting Dots */}
-            <circle cx="100" cy="20" r="1.5" fill="var(--accent)" />
-            <circle cx="45" cy="100" r="1.2" fill="var(--live)" />
-            <circle cx="100" cy="170" r="1.8" fill="var(--accent)" />
+            <circle cx="100" cy="20" r="1.6" fill="var(--accent)" filter="url(#neon-glow-accent)" />
+            <circle cx="45" cy="100" r="1.2" fill="var(--live)" filter="url(#neon-glow-live)" />
+            <circle cx="100" cy="170" r="2.0" fill="var(--accent)" filter="url(#neon-glow-accent)" />
           </svg>
         </motion.div>
 

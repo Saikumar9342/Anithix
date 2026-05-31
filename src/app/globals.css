@@ -387,3 +387,20 @@ img, canvas { display: block; max-width: 100%; }
   .trust { gap: 0.5rem; margin-top: 1.5rem; }
   .section-head { gap: 0.8rem; }
 }
+
+/* ---- Cosmic Orbit Animations ---- */
+.animate-spin-dashed-slow {
+  animation: spin-dashed 75s linear infinite;
+}
+.animate-spin-dashed-fast {
+  animation: spin-dashed-reverse 45s linear infinite;
+}
+
+@keyframes spin-dashed {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes spin-dashed-reverse {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
