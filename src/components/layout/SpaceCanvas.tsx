@@ -589,7 +589,7 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
       </group>
 
       {/* 3. Spaceship */}
-      <group ref={spaceshipRef} position={[-0.6, -0.5, 1.5]} scale={0.12}>
+      <group ref={spaceshipRef} position={[-0.6, -0.5, 1.5]} scale={0.07}>
         <primitive object={shipScene} />
       </group>
 
