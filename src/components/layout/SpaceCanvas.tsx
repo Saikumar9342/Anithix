@@ -221,7 +221,8 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
       planetRef.current.position.y = THREE.MathUtils.lerp(PLANET_START.y, PLANET_END.y, easedDrift);
       planetRef.current.position.z = PLANET_START.z;
       planetRef.current.scale.setScalar(PLANET_SCALE);
-      planetRef.current.visible = p < 0.65;
+      // Hide planet before reaching "Connected Suite" section (around p=0.45-0.50)
+      planetRef.current.visible = p < 0.45;
     }
 
 
@@ -518,7 +519,8 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
     debrisRefs.current.forEach((dr, i) => {
       if (!dr) return;
       
-      dr.visible = hasExploded && p < 0.60;
+      // Hide debris when we move away from planet (same timing as planet)
+      dr.visible = hasExploded && p < 0.45;
       
       if (hasExploded) {
         const d = DEBRIS_DATA[i];
