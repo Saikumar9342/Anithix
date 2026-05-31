@@ -64,111 +64,178 @@ function GLB({ path, scale }: { path: string; scale: number }) {
   return <primitive object={scene.clone()} scale={scale} />;
 }
 
+// Simple sphere-based trail blob
+function TrailBlob({ idx, trailRefs, color }: { idx: number; trailRefs: React.MutableRefObject<(THREE.Mesh | null)[]>; color: string }) {
+  return (
+    <mesh ref={(el) => { trailRefs.current[idx] = el; }}>
+      <sphereGeometry args={[0.18, 12, 12]} />
+      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3} transparent opacity={0} depthWrite={false} />
+    </mesh>
+  );
+}
+
 // ── 3D Scene ──────────────────────────────────────────────────────────────────
+const TRAIL_COUNT = 6;
+
 function ImpactScene({ progress }: { progress: MotionValue<number> }) {
-  const redRef = useRef<THREE.Group>(null);
-  const lavaRef = useRef<THREE.Group>(null);
-  const asteroidRef = useRef<THREE.Group>(null);
-  const flashRef = useRef<THREE.PointLight>(null);
-  const groupRef = useRef<THREE.Group>(null);
+  const PLANET_SCALE = 1.55;
+  const impact = 0.58;
 
-  useFrame((_, delta) => {
+  const redRef       = useRef<THREE.Group>(null);
+  const lavaRef      = useRef<THREE.Group>(null);
+  const asteroidRef  = useRef<THREE.Group>(null);
+  const glowRef      = useRef<THREE.Mesh>(null);
+  const heatLightRef = useRef<THREE.PointLight>(null);
+  const flashRef     = useRef<THREE.PointLight>(null);
+  const rimRef       = useRef<THREE.PointLight>(null);
+  const groupRef     = useRef<THREE.Group>(null);
+  const trailRefs    = useRef<(THREE.Mesh | null)[]>(Array(TRAIL_COUNT).fill(null));
+  const shakeT       = useRef(0);
+
+  // Travel path: start clearly visible top-right, end at planet surface
+  // Camera at z=5, fov=42 — visible x range ≈ ±3.5, y ≈ ±2.2 at z=0
+  const START = { x: 3.8, y: 2.8, z: 0.0 };
+  const END   = { x: -1.5, y: -0.6, z: 0.5 };
+
+  useFrame((state, delta) => {
     const p = progress.get();
-    const impact = 0.58;
 
-    if (redRef.current) redRef.current.rotation.y += delta * 0.05;
-    if (lavaRef.current) lavaRef.current.rotation.y += delta * 0.08;
+    if (redRef.current) redRef.current.rotation.y += delta * 0.04;
+    if (lavaRef.current) lavaRef.current.rotation.y += delta * 0.07;
 
-    // Planet group drifts bottom-left as user scrolls
+    // Planet drifts bottom-left
     if (groupRef.current) {
       const move = THREE.MathUtils.clamp((p - 0.08) / 0.22, 0, 1);
-      const eased = move < 0.5 ? 2 * move * move : 1 - Math.pow(-2 * move + 2, 2) / 2;
-      groupRef.current.position.x = THREE.MathUtils.lerp(0, -2.4, eased);
-      groupRef.current.position.y = THREE.MathUtils.lerp(0, -1.2, eased);
+      const e = move < 0.5 ? 2 * move * move : 1 - Math.pow(-2 * move + 2, 2) / 2;
+      groupRef.current.position.x = THREE.MathUtils.lerp(0, -2.2, e);
+      groupRef.current.position.y = THREE.MathUtils.lerp(0, -1.1, e);
     }
 
-    // Planet cross-fade at impact
-    const beforeAmt = p < impact ? 1 : Math.max(0, 1 - (p - impact) / 0.05);
-    const afterAmt = p < impact ? 0 : Math.min(1, (p - impact) / 0.1);
+    // Planet cross-fade — both same scale
+    const beforeAmt = p < impact ? 1 : Math.max(0, 1 - (p - impact) / 0.04);
+    const afterAmt  = p < impact ? 0 : Math.min(1, (p - impact) / 0.08);
     if (redRef.current) {
-      redRef.current.scale.setScalar(1.6 * beforeAmt);
+      redRef.current.scale.setScalar(PLANET_SCALE * beforeAmt);
       redRef.current.visible = beforeAmt > 0.01;
     }
     if (lavaRef.current) {
-      lavaRef.current.scale.setScalar(
-        afterAmt > 0.01 ? 1.6 * (0.5 + afterAmt * 0.5) : 0.0001
-      );
+      lavaRef.current.scale.setScalar(PLANET_SCALE);
       lavaRef.current.visible = afterAmt > 0.01;
     }
 
-    // Asteroid: from top-right → planet's bottom-left position
+    // Asteroid — quintic ease so it starts slow and ROCKETS at the end
+    const aStart = 0.22, aEnd = impact;
+    const raw = THREE.MathUtils.clamp((p - aStart) / (aEnd - aStart), 0, 1);
+    const e5  = raw * raw * raw * raw * raw;
+    const vis = p >= aStart && p <= impact + 0.01;
+
+    const ax = THREE.MathUtils.lerp(START.x, END.x, e5);
+    const ay = THREE.MathUtils.lerp(START.y, END.y, e5);
+    const az = THREE.MathUtils.lerp(START.z, END.z, e5);
+
     if (asteroidRef.current) {
-      const aStart = 0.22;
-      const aEnd = impact + 0.02;
-      const a = THREE.MathUtils.clamp((p - aStart) / (aEnd - aStart), 0, 1);
-      const vis = p >= aStart - 0.01 && p <= aEnd;
       asteroidRef.current.visible = vis;
-      const eased = a * a;
-      asteroidRef.current.position.set(
-        THREE.MathUtils.lerp(5, -2.1, eased),
-        THREE.MathUtils.lerp(3.8, -0.9, eased),
-        THREE.MathUtils.lerp(-1, 0.5, eased)
-      );
-      asteroidRef.current.scale.setScalar(THREE.MathUtils.lerp(0.3, 1.0, eased));
-      asteroidRef.current.rotation.x += delta * 2.5;
-      asteroidRef.current.rotation.z += delta * 1.8;
+      asteroidRef.current.position.set(ax, ay, az);
+      asteroidRef.current.scale.setScalar(0.42);
+      const spin = 3 + e5 * 22;
+      asteroidRef.current.rotation.x += delta * spin;
+      asteroidRef.current.rotation.z += delta * spin * 0.6;
+    }
+
+    // Glow shell — brightens as it speeds up
+    if (glowRef.current) {
+      const mat = glowRef.current.material as THREE.MeshStandardMaterial;
+      mat.emissiveIntensity = 2 + e5 * 8;
+      mat.opacity = vis ? 0.15 + e5 * 0.35 : 0;
+    }
+
+    // Heat light tracks asteroid
+    if (heatLightRef.current) {
+      heatLightRef.current.position.set(ax, ay, az + 0.5);
+      heatLightRef.current.intensity = vis ? 1 + e5 * 12 : 0;
+    }
+
+    // Trail blobs — spaced behind along the travel direction
+    const dx = END.x - START.x, dy = END.y - START.y, dz = END.z - START.z;
+    const len = Math.sqrt(dx*dx + dy*dy + dz*dz);
+    const nx = dx/len, ny = dy/len, nz = dz/len;
+    trailRefs.current.forEach((mesh, i) => {
+      if (!mesh) return;
+      const t = (i + 1) * 0.22 * (0.3 + e5 * 0.7);
+      mesh.visible = vis && e5 > 0.03;
+      mesh.position.set(ax - nx * t, ay - ny * t, az - nz * t);
+      const fade = (1 - (i + 1) / (TRAIL_COUNT + 1)) * e5 * 0.7;
+      const mat = mesh.material as THREE.MeshStandardMaterial;
+      mat.opacity = Math.max(0, fade);
+      // Scale: elongate along travel dir to look like a streak
+      const stretchZ = 1 + e5 * 3;
+      mesh.scale.set(1 - i * 0.1, 1 - i * 0.1, stretchZ);
+    });
+
+    // Camera shake at impact
+    const shakeAmt = p > impact - 0.005 && p < impact + 0.1
+      ? (1 - Math.abs(p - impact) / 0.09) * 0.2 : 0;
+    if (shakeAmt > 0) {
+      shakeT.current += delta * 80;
+      state.camera.position.x = Math.sin(shakeT.current * 1.9) * shakeAmt;
+      state.camera.position.y = Math.cos(shakeT.current * 2.7) * shakeAmt * 0.6;
+    } else {
+      state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, 0, delta * 10);
+      state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, 0, delta * 10);
     }
 
     // Impact flash
-    if (flashRef.current) {
-      const f =
-        p > impact - 0.02 && p < impact + 0.1
-          ? 1 - Math.abs(p - impact) / 0.1
-          : 0;
-      flashRef.current.intensity = Math.max(0, f) * 80;
-    }
+    const f = p > impact - 0.01 && p < impact + 0.1
+      ? Math.max(0, 1 - Math.abs(p - impact) / 0.08) : 0;
+    if (flashRef.current) flashRef.current.intensity = f * 160;
+    if (rimRef.current)   rimRef.current.intensity   = afterAmt * 5;
   });
 
   return (
     <>
-      <ambientLight intensity={0.3} />
-      <directionalLight position={[5, 3, 5]} intensity={2.0} color="#fff" />
-      <directionalLight position={[-6, -2, -4]} intensity={0.7} color="#7c5cff" />
-      <pointLight
-        ref={flashRef}
-        position={[0, 0, 2]}
-        intensity={0}
-        color="#ff7b3a"
-        distance={20}
-      />
+      <ambientLight intensity={0.25} />
+      <directionalLight position={[5, 3, 5]} intensity={1.8} color="#fff" />
+      <directionalLight position={[-6, -2, -4]} intensity={0.5} color="#7c5cff" />
+      <pointLight ref={heatLightRef} position={[START.x, START.y, START.z]} intensity={0} color="#ff4400" distance={5} />
+      <pointLight ref={flashRef} position={[-1.5, -0.5, 1.5]} intensity={0} color="#ff8c3a" distance={20} />
+      <pointLight ref={rimRef} position={[-2, -1, 0.5]} intensity={0} color="#ff3300" distance={12} />
 
+      {/* Planet group */}
       <group ref={groupRef}>
         <group ref={redRef}>
-          <ModelBoundary
-            fallback={
-              <FallbackSphere color="#7a3b2e" emissive="#3a140c" emissiveIntensity={0.25} />
-            }
-          >
+          <ModelBoundary fallback={<FallbackSphere color="#7a3b2e" emissive="#3a140c" emissiveIntensity={0.25} />}>
             <GLB path={PLANET} scale={1} />
           </ModelBoundary>
         </group>
-
         <group ref={lavaRef} visible={false}>
-          <ModelBoundary
-            fallback={
-              <FallbackSphere color="#1c0f0a" emissive="#ff5a1e" emissiveIntensity={1.1} />
-            }
-          >
+          <ModelBoundary fallback={<FallbackSphere color="#1c0f0a" emissive="#ff5a1e" emissiveIntensity={1.1} />}>
             <GLB path={LAVA} scale={1} />
           </ModelBoundary>
         </group>
       </group>
 
-      {/* Asteroid in world space so it travels from top-right to planet */}
+      {/* Trail blobs */}
+      {Array.from({ length: TRAIL_COUNT }).map((_, i) => (
+        <TrailBlob
+          key={i}
+          idx={i}
+          trailRefs={trailRefs}
+          color={i < 2 ? "#ff4400" : i < 4 ? "#ff8800" : "#ffaa44"}
+        />
+      ))}
+
+      {/* Asteroid with red-hot glow shell */}
       <group ref={asteroidRef} visible={false}>
-        <ModelBoundary fallback={<FallbackSphere color="#2a2a2e" emissive="#000" />}>
+        <ModelBoundary fallback={<FallbackSphere color="#1a1a1e" emissive="#ff2200" emissiveIntensity={2} />}>
           <GLB path={ASTEROID} scale={1} />
         </ModelBoundary>
+        <mesh ref={glowRef}>
+          <sphereGeometry args={[0.52, 24, 24]} />
+          <meshStandardMaterial
+            color="#ff2200" emissive="#ff1100" emissiveIntensity={2}
+            transparent opacity={0} side={THREE.BackSide} depthWrite={false}
+          />
+        </mesh>
       </group>
 
       <Environment preset="night" />
@@ -255,7 +322,7 @@ export function Hero() {
         {/* 3D Canvas */}
         <div className="absolute inset-0 z-0">
           <Canvas
-            camera={{ position: [0, 0, 5], fov: 42 }}
+            camera={{ position: [0, 0, 4], fov: 55 }}
             gl={{
               antialias: true,
               alpha: true,
