@@ -64,6 +64,32 @@ function GLB({ path, scale }: { path: string; scale: number }) {
   return <primitive object={scene.clone()} scale={scale} />;
 }
 
+const DEBRIS = "/models/debris.glb";
+const DEBRIS_COUNT = 120;
+
+// Each piece has a fixed blast velocity direction + rotation axis
+// Seeded once so it's deterministic
+function seeded(n: number) {
+  // simple deterministic pseudo-random from index
+  const x = Math.sin(n * 127.1) * 43758.5453;
+  return x - Math.floor(x);
+}
+const DEBRIS_DATA = Array.from({ length: DEBRIS_COUNT }, (_, i) => {
+  // Full 360° spherical blast — rocks go in every direction
+  const theta = seeded(i * 3 + 0) * Math.PI * 2;         // 0–360° horizontal
+  const phi   = (seeded(i * 3 + 1) - 0.5) * Math.PI;     // -90–90° vertical
+  const vx = Math.cos(phi) * Math.cos(theta);
+  const vy = Math.sin(phi) * 1.1;
+  const vz = Math.cos(phi) * Math.sin(theta) * 0.7;       // depth variation
+  // Smaller rocks travel further (realistic explosion physics)
+  const scale  = 0.10 + seeded(i * 7 + 1) * 0.32;
+  const speed  = (1.0 / (scale + 0.1)) * (1.2 + seeded(i * 3 + 2) * 1.8);
+  const rotX   = (seeded(i * 5 + 0) - 0.5) * 12;
+  const rotZ   = (seeded(i * 5 + 1) - 0.5) * 14;
+  const heat   = 0.2 + seeded(i * 11 + 3) * 0.8;
+  return { vx, vy, vz, speed, scale, rotX, rotZ, heat };
+});
+
 // Simple sphere-based trail blob
 function TrailBlob({ idx, trailRefs, color }: { idx: number; trailRefs: React.MutableRefObject<(THREE.Mesh | null)[]>; color: string }) {
   return (
@@ -89,8 +115,11 @@ function ImpactScene({ progress }: { progress: MotionValue<number> }) {
   const flashRef     = useRef<THREE.PointLight>(null);
   const rimRef       = useRef<THREE.PointLight>(null);
   const groupRef     = useRef<THREE.Group>(null);
-  const trailRefs    = useRef<(THREE.Mesh | null)[]>(Array(TRAIL_COUNT).fill(null));
-  const shakeT       = useRef(0);
+  const trailRefs     = useRef<(THREE.Mesh | null)[]>(Array(TRAIL_COUNT).fill(null));
+  const debrisRefs    = useRef<(THREE.Group | null)[]>(Array(120).fill(null));
+  const debrisT       = useRef(0);
+  const impactOrigin  = useRef<[number, number]>([-2.2, -1.1]);
+  const shakeT        = useRef(0);
 
   // Travel path: start clearly visible top-right, end at planet surface
   // Camera at z=5, fov=42 — visible x range ≈ ±3.5, y ≈ ±2.2 at z=0
@@ -189,6 +218,40 @@ function ImpactScene({ progress }: { progress: MotionValue<number> }) {
       ? Math.max(0, 1 - Math.abs(p - impact) / 0.08) : 0;
     if (flashRef.current) flashRef.current.intensity = f * 160;
     if (rimRef.current)   rimRef.current.intensity   = afterAmt * 5;
+
+    // Snapshot planet position at moment of impact
+    if (afterAmt <= 0.01 && groupRef.current) {
+      impactOrigin.current = [groupRef.current.position.x, groupRef.current.position.y];
+    }
+
+    // Debris: driven purely by afterAmt scroll progress
+    if (afterAmt > 0.01) {
+      debrisT.current += delta;
+      const [ox, oy] = impactOrigin.current;
+
+      const blastT = Math.min(1, afterAmt / 0.6);
+      // Ease-out quart — explosive fast start, smooth deceleration
+      const eased = 1 - Math.pow(1 - blastT, 4);
+
+      debrisRefs.current.forEach((dr, i) => {
+        if (!dr) return;
+        const d = DEBRIS_DATA[i];
+        const dist = d.speed * eased;
+
+        dr.visible = true;
+        dr.position.set(
+          ox + d.vx * dist,
+          oy + d.vy * dist,
+          d.vz * dist
+        );
+        const tumbleSpeed = Math.max(0.05, 1 - eased * 0.8);
+        dr.rotation.x += delta * d.rotX * tumbleSpeed;
+        dr.rotation.z += delta * d.rotZ * tumbleSpeed;
+        dr.scale.setScalar(d.scale * Math.min(1, blastT * 4));
+      });
+    } else {
+      debrisRefs.current.forEach((dr) => { if (dr) dr.visible = false; });
+    }
   });
 
   return (
@@ -238,10 +301,50 @@ function ImpactScene({ progress }: { progress: MotionValue<number> }) {
         </mesh>
       </group>
 
+      {/* Debris blasted from impact — first 40 use GLB, rest are procedural for perf */}
+      {Array.from({ length: DEBRIS_COUNT }).map((_, i) => (
+        <group key={`d${i}`} ref={(el) => { debrisRefs.current[i] = el; }} visible={false}>
+          {i < 40 ? (
+            <ModelBoundary fallback={
+              <mesh>
+                <dodecahedronGeometry args={[0.15, 0]} />
+                <meshStandardMaterial color="#2a1a10" emissive="#ff3300" emissiveIntensity={DEBRIS_DATA[i].heat} roughness={0.95} />
+              </mesh>
+            }>
+              <GLB path={DEBRIS} scale={1} />
+            </ModelBoundary>
+          ) : (
+            // Lightweight procedural rocks for count > 40
+            <mesh>
+              <dodecahedronGeometry args={[0.12 + seeded(i * 13) * 0.1, 0]} />
+              <meshStandardMaterial
+                color="#1e1208"
+                emissive="#ff2200"
+                emissiveIntensity={DEBRIS_DATA[i].heat * 0.8}
+                roughness={0.95}
+                metalness={0.05}
+              />
+            </mesh>
+          )}
+          {/* Heat glow halo */}
+          <mesh>
+            <sphereGeometry args={[0.2, 6, 6]} />
+            <meshStandardMaterial
+              color="#ff4400" emissive="#ff2200"
+              emissiveIntensity={DEBRIS_DATA[i].heat * 1.5}
+              transparent opacity={0.06 + DEBRIS_DATA[i].heat * 0.08}
+              side={THREE.BackSide} depthWrite={false}
+            />
+          </mesh>
+        </group>
+      ))}
+
       <Environment preset="night" />
     </>
   );
 }
+
+useGLTF.preload(DEBRIS);
 
 function Loader() {
   const { progress } = useProgress();
@@ -286,8 +389,7 @@ export function Hero() {
   );
 
   const afterPanelRef = useRef<HTMLDivElement>(null);
-  const heroPanelRef = useRef<HTMLDivElement>(null);
-
+  const heroPanelRef  = useRef<HTMLDivElement>(null);
   // Drive both panels entirely via DOM refs
   useEffect(() => {
     return scrollYProgress.on("change", (v) => {
@@ -499,6 +601,7 @@ export function Hero() {
             Explore the suite →
           </a>
         </div>
+
       </section>
     </div>
   );
