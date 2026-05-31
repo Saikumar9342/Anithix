@@ -42,7 +42,7 @@ body {
 
 /* Universe theme: content sections are transparent so the starfield shows behind.
    Cards keep their own surfaces for readability. */
-main, .section, section { background: transparent !important; }
+main, .section, section { background: transparent; }
 
 /* Subtle Noise Overlay */
 body::before {

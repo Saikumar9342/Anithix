@@ -5,7 +5,6 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import Link from "next/link";
 import { JellyText } from "@/components/animations/JellyText";
 
-/* ── Gallery cards (Awwwards-style showcase) ─── */
 const CARDS = [
   {
     id: "graviton",
@@ -31,205 +30,298 @@ const CARDS = [
     tags: ["AI", "AUTOMATION"],
     status: "In Dev",
   },
-  {
-    id: "future-labs",
-    name: "Future Labs",
-    category: "Research & Innovation",
-    img: "/images/futurelabs.png",
-    tags: ["R&D", "CONCEPTS"],
-    status: "Future",
-  },
 ];
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
 export function Hero() {
-  const containerRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "end start"] });
-  const rightY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
-  const leftY = useTransform(scrollYProgress, [0, 1], ["0%", "-10%"]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Tall scroll driver so the viewport stays sticky
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"],
+  });
+
+  // 1. Giant text outline scaling down & fading out
+  const logoScale = useTransform(scrollYProgress, [0, 0.8], [1.8, 1]);
+  const logoOpacity = useTransform(scrollYProgress, [0, 0.6], [0.08, 0.02]);
+  const logoY = useTransform(scrollYProgress, [0, 1], ["0%", "-10%"]);
+
+  // 2. Left column (content block) glides up & fades out slowly on scroll
+  const leftY = useTransform(scrollYProgress, [0, 0.5], ["0px", "-80px"]);
+  const leftOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+
+  // 3. Grid line split translations
+  const lineLeftX = useTransform(scrollYProgress, [0, 1], ["0%", "-40%"]);
+  const lineRightX = useTransform(scrollYProgress, [0, 1], ["0%", "40%"]);
+
+  // 4. Showcase cards flying animations (Parallax offsets per card)
+  const card1Y = useTransform(scrollYProgress, [0, 1], ["0px", "-160px"]);
+  const card2Y = useTransform(scrollYProgress, [0, 1], ["0px", "-60px"]);
+  const card3Y = useTransform(scrollYProgress, [0, 1], ["0px", "-240px"]);
+
+  const card1Rotate = useTransform(scrollYProgress, [0, 1], [-4, -8]);
+  const card2Rotate = useTransform(scrollYProgress, [0, 1], [3, 8]);
+  const card3Rotate = useTransform(scrollYProgress, [0, 1], [-1, -3]);
 
   return (
-    <section
-      ref={containerRef}
-      id="hero"
-      className="section relative min-h-[90vh] overflow-hidden flex flex-col justify-center"
-      style={{ background: "var(--bg)", paddingTop: "6rem" }}
-    >
-      {/* Subtle grid texture */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.04]"
+    <div ref={containerRef} style={{ height: "180vh", position: "relative" }}>
+      {/* Sticky viewport content */}
+      <section
+        id="hero"
         style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)`,
-          backgroundSize: "80px 80px",
-          maskImage: "radial-gradient(ellipse 80% 60% at 50% 50%, black, transparent 80%)",
+          position: "sticky",
+          top: 0,
+          height: "100vh",
+          overflow: "hidden",
+          background: "var(--bg)",
+          display: "flex",
+          alignItems: "center",
         }}
-      />
-
-      <div className="wrap relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-12 items-center">
-        
-        {/* ── LEFT COLUMN: Typography & CTA ── */}
-        <motion.div style={{ y: leftY }} className="flex flex-col items-start text-left">
-          
-
-          {/* Headline */}
-          <div className="pointer-events-auto flex flex-col items-start gap-0" style={{ fontSize: "clamp(3.5rem, 6vw, 5.5rem)", lineHeight: 1.05, letterSpacing: "-0.04em", marginBottom: "2rem", fontWeight: 600 }}>
-            <JellyText text="We build" />
-            <JellyText text="intelligent" style={{ color: "var(--accent)" }} />
-            <JellyText text="products." style={{ color: "var(--ink-3)" }} />
-          </div>
-
-          {/* Subline */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.2, ease }}
+      >
+        {/* Subtle grid texture with line splitting */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.04] flex items-center justify-between">
+          <motion.div
             style={{
-              maxWidth: "480px",
-              color: "var(--ink-2)",
-              margin: "0 0 3rem 0",
-              fontSize: "1.1rem",
-              lineHeight: 1.6,
+              x: lineLeftX,
+              width: "50%",
+              height: "100%",
+              backgroundImage: `linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)`,
+              backgroundSize: "80px 80px",
+            }}
+          />
+          <motion.div
+            style={{
+              x: lineRightX,
+              width: "50%",
+              height: "100%",
+              backgroundImage: `linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)`,
+              backgroundSize: "80px 80px",
+            }}
+          />
+        </div>
+
+        {/* Massive background outline logo */}
+        <motion.div
+          style={{
+            scale: logoScale,
+            opacity: logoOpacity,
+            y: logoY,
+            position: "absolute",
+            width: "100%",
+            textAlign: "center",
+            left: 0,
+            zIndex: 1,
+            pointerEvents: "none",
+            userSelect: "none",
+          }}
+        >
+          <span
+            style={{
+              fontSize: "clamp(8rem, 20vw, 24rem)",
+              fontWeight: 900,
+              letterSpacing: "-0.04em",
+              color: "transparent",
+              WebkitTextStroke: "2px rgba(255,255,255,0.7)",
+              lineHeight: 1,
             }}
           >
-            AI-powered software, automation platforms, and developer tools for creators and teams who demand precision and performance.
-          </motion.p>
-
-          {/* CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.3, ease }}
-            className="pointer-events-auto"
-          >
-            <Link
-              href="#products"
-              className="inline-flex items-center gap-3 font-500 transition-all duration-300"
-              style={{
-                background: "var(--accent)",
-                color: "var(--bg)",
-                padding: "1rem 2.5rem",
-                borderRadius: "999px",
-                fontSize: "1rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                fontWeight: 700,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-3px) scale(1.02)";
-                e.currentTarget.style.boxShadow = "0 20px 40px rgba(124, 58, 237, 0.3)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0) scale(1)";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            >
-              Explore the Suite
-              <span>→</span>
-            </Link>
-          </motion.div>
+            ANITHIX
+          </span>
         </motion.div>
 
-        {/* ── RIGHT COLUMN: Gallery Grid ── */}
-        <motion.div style={{ y: rightY }} className="grid grid-cols-2 gap-4 lg:gap-6 relative">
-          {/* Subtle glow behind cards */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-purple-500/10 blur-[100px] rounded-full pointer-events-none" />
+        {/* Global wrapper */}
+        <div className="wrap relative z-10 w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
-          {CARDS.map((card, i) => (
-            <motion.div
-              key={card.id}
-              initial={{ opacity: 0, y: 40, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.4 + i * 0.1, ease }}
-              className={`relative ${i % 2 !== 0 ? 'mt-8 lg:mt-16' : ''}`} // Staggered layout
+          {/* ── LEFT COLUMN: Text Content & CTA (Span 5) ── */}
+          <motion.div
+            style={{ y: leftY, opacity: leftOpacity }}
+            className="lg:col-span-5 flex flex-col items-start text-left"
+          >
+            {/* Headline */}
+            <div
+              className="pointer-events-auto flex flex-col items-start gap-1"
+              style={{
+                fontSize: "clamp(3.5rem, 5.5vw, 5.2rem)",
+                lineHeight: 1.0,
+                letterSpacing: "-0.04em",
+                marginBottom: "2rem",
+                fontWeight: 800,
+              }}
             >
-              <Link href="/products" className="group block">
-                {/* Thumbnail */}
-                <div
-                  className="relative overflow-hidden rounded-2xl mb-4 transition-all duration-500 group-hover:-translate-y-2 group-hover:shadow-[0_20px_40px_rgba(124,58,237,0.15)]"
-                  style={{
-                    aspectRatio: "16 / 11",
-                    border: "1px solid rgba(255,255,255,0.05)",
-                    background: "var(--bg-1)",
-                  }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={card.img}
-                    alt={card.name}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 opacity-90 group-hover:opacity-100"
-                  />
-                  {/* hover veil */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-40 group-hover:opacity-70 transition-opacity duration-500" />
-                  
-                  {/* Status chip */}
-                  <span
-                    className="absolute top-4 left-4 inline-flex items-center gap-1.5"
-                    style={{
-                      fontFamily: "var(--mono)",
-                      fontSize: "0.65rem",
-                      letterSpacing: "0.14em",
-                      textTransform: "uppercase",
-                      color: "var(--ink)",
-                      background: "rgba(124, 58, 237, 0.2)",
-                      backdropFilter: "blur(8px)",
-                      border: "1px solid rgba(124, 58, 237, 0.4)",
-                      borderRadius: "999px",
-                      padding: "0.3em 0.8em",
-                    }}
-                  >
-                    <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: "var(--accent)" }} />
-                    {card.status}
-                  </span>
-                </div>
+              <JellyText text="We build" />
+              <JellyText text="intelligent" style={{ color: "var(--accent)" }} />
+              <JellyText text="products." style={{ color: "var(--ink-3)" }} />
+            </div>
 
-                {/* Name */}
-                <h3
-                  className="transition-colors duration-300 group-hover:text-[var(--accent)]"
-                  style={{
-                    fontSize: "1.1rem",
-                    fontWeight: 700,
-                    letterSpacing: "0.02em",
-                    textTransform: "uppercase",
-                    color: "var(--ink)",
-                    marginBottom: "0.4rem",
-                  }}
-                >
-                  {card.name}
-                </h3>
+            {/* Subline */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.2, ease }}
+              style={{
+                maxWidth: "420px",
+                color: "rgba(255,255,255,0.6)",
+                margin: "0 0 3rem 0",
+                fontSize: "1.05rem",
+                lineHeight: 1.6,
+              }}
+            >
+              AI-powered software, automation platforms, and developer tools for creators and teams who demand precision and performance.
+            </motion.p>
 
-                {/* Tag labels */}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  {card.tags.map((t) => (
-                    <span
-                      key={t}
-                      style={{
-                        fontFamily: "var(--mono)",
-                        fontSize: "0.65rem",
-                        letterSpacing: "0.12em",
-                        color: "var(--ink-4)",
-                      }}
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
+            {/* CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.3, ease }}
+              className="pointer-events-auto"
+            >
+              <Link
+                href="#products"
+                className="inline-flex items-center gap-3 transition-all duration-300"
+                style={{
+                  background: "var(--accent)",
+                  color: "var(--bg)",
+                  padding: "1rem 2.2rem",
+                  borderRadius: "999px",
+                  fontSize: "0.85rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  fontWeight: 700,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-3px) scale(1.02)";
+                  e.currentTarget.style.boxShadow = "0 20px 40px rgba(124, 58, 237, 0.3)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0) scale(1)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              >
+                Explore the Suite
+                <span>→</span>
               </Link>
             </motion.div>
-          ))}
-        </motion.div>
-      </div>
+          </motion.div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 1 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-10 pointer-events-none"
-        style={{ color: "var(--ink-4)" }}
-      >
-        <div className="w-px h-16" style={{ background: "linear-gradient(to bottom, var(--accent), transparent)" }} />
-      </motion.div>
-    </section>
+          {/* ── RIGHT COLUMN: Flying Staggered 3D Cards (Span 7) ── */}
+          <div className="lg:col-span-7 relative flex justify-end items-center h-[650px] w-full">
+            {/* Subtle glow behind cards */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-purple-500/10 blur-[120px] rounded-full pointer-events-none" />
+
+            {/* Card 1: Graviton (Top Left / Behind) */}
+            <motion.div
+              initial={{ opacity: 0, x: -100, y: 50, scale: 0.9 }}
+              animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+              transition={{ duration: 1.2, delay: 0.4, ease }}
+              className="absolute left-[5%] top-[15%] w-[260px] h-[340px] z-10 rounded-[1.5rem] overflow-hidden border border-white/5 shadow-2xl"
+              style={{
+                y: card1Y,
+                rotate: card1Rotate,
+                background: "rgba(10,10,12,0.85)",
+                backdropFilter: "blur(20px)",
+                padding: "1.5rem",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+              }}
+            >
+              <div className="w-full h-[55%] rounded-[1rem] overflow-hidden border border-white/5 relative">
+                <img src={CARDS[0].img} alt={CARDS[0].name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <span style={{ position: "absolute", top: "0.75rem", left: "0.75rem", fontSize: "0.6rem", background: "rgba(124, 58, 237, 0.4)", backdropFilter: "blur(8px)", padding: "0.3rem 0.6rem", borderRadius: "100px", color: "#fff", fontWeight: 700, letterSpacing: "0.1em" }}>{CARDS[0].status}</span>
+              </div>
+              <div>
+                <h4 style={{ fontSize: "1.1rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.02em", color: "var(--ink)", marginBottom: "0.25rem" }}>{CARDS[0].name}</h4>
+                <p style={{ fontSize: "0.75rem", color: "var(--ink-4)", marginBottom: "0.75rem" }}>{CARDS[0].category}</p>
+                <div style={{ display: "flex", gap: "0.4rem" }}>
+                  {CARDS[0].tags.map(t => (
+                    <span key={t} style={{ fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.05em", color: "var(--accent)", background: "rgba(124, 58, 237, 0.1)", padding: "0.2rem 0.5rem", borderRadius: "100px" }}>{t}</span>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Card 2: Atom (Center Main / Floating) */}
+            <motion.div
+              initial={{ opacity: 0, y: 150, scale: 0.85 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 1.4, delay: 0.5, ease }}
+              className="absolute left-[35%] top-[25%] w-[290px] h-[380px] z-30 rounded-[1.8rem] overflow-hidden border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.8)]"
+              style={{
+                y: card2Y,
+                rotate: card2Rotate,
+                background: "rgba(15,15,18,0.9)",
+                backdropFilter: "blur(30px)",
+                padding: "1.75rem",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+              }}
+            >
+              <div className="w-full h-[58%] rounded-[1.2rem] overflow-hidden border border-white/10 relative">
+                <img src={CARDS[1].img} alt={CARDS[1].name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <span style={{ position: "absolute", top: "0.85rem", left: "0.85rem", fontSize: "0.6rem", background: "rgba(124, 58, 237, 0.5)", backdropFilter: "blur(8px)", padding: "0.3rem 0.7rem", borderRadius: "100px", color: "#fff", fontWeight: 700, letterSpacing: "0.1em" }}>{CARDS[1].status}</span>
+              </div>
+              <div>
+                <h4 style={{ fontSize: "1.3rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.02em", color: "var(--ink)", marginBottom: "0.25rem" }}>{CARDS[1].name}</h4>
+                <p style={{ fontSize: "0.8rem", color: "var(--ink-4)", marginBottom: "0.75rem" }}>{CARDS[1].category}</p>
+                <div style={{ display: "flex", gap: "0.4rem" }}>
+                  {CARDS[1].tags.map(t => (
+                    <span key={t} style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.05em", color: "var(--accent)", background: "rgba(124, 58, 237, 0.1)", padding: "0.2rem 0.6rem", borderRadius: "100px" }}>{t}</span>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Card 3: Orbis (Bottom Right / Forward) */}
+            <motion.div
+              initial={{ opacity: 0, x: 120, y: 100, scale: 0.9 }}
+              animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+              transition={{ duration: 1.3, delay: 0.6, ease }}
+              className="absolute right-[5%] bottom-[10%] w-[250px] h-[320px] z-20 rounded-[1.5rem] overflow-hidden border border-white/5 shadow-2xl"
+              style={{
+                y: card3Y,
+                rotate: card3Rotate,
+                background: "rgba(10,10,12,0.85)",
+                backdropFilter: "blur(20px)",
+                padding: "1.5rem",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+              }}
+            >
+              <div className="w-full h-[52%] rounded-[1rem] overflow-hidden border border-white/5 relative">
+                <img src={CARDS[2].img} alt={CARDS[2].name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <span style={{ position: "absolute", top: "0.75rem", left: "0.75rem", fontSize: "0.6rem", background: "rgba(124, 58, 237, 0.4)", backdropFilter: "blur(8px)", padding: "0.3rem 0.6rem", borderRadius: "100px", color: "#fff", fontWeight: 700, letterSpacing: "0.1em" }}>{CARDS[2].status}</span>
+              </div>
+              <div>
+                <h4 style={{ fontSize: "1.1rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.02em", color: "var(--ink)", marginBottom: "0.25rem" }}>{CARDS[2].name}</h4>
+                <p style={{ fontSize: "0.75rem", color: "var(--ink-4)", marginBottom: "0.75rem" }}>{CARDS[2].category}</p>
+                <div style={{ display: "flex", gap: "0.4rem" }}>
+                  {CARDS[2].tags.map(t => (
+                    <span key={t} style={{ fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.05em", color: "var(--accent)", background: "rgba(124, 58, 237, 0.1)", padding: "0.2rem 0.5rem", borderRadius: "100px" }}>{t}</span>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+          </div>
+
+        </div>
+
+        {/* Scroll indicator */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5, duration: 1 }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-10 pointer-events-none"
+          style={{ color: "var(--ink-4)" }}
+        >
+          <div className="w-px h-16" style={{ background: "linear-gradient(to bottom, var(--accent), transparent)" }} />
+        </motion.div>
+      </section>
+    </div>
   );
 }
