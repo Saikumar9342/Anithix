@@ -1,0 +1,7 @@
+I need to save the actual screenshot images. Since I can see the images but cannot directly save them from the screenshots, I'll update the code to use the correct image paths. You'll need to save these images as:
+
+1. Save the Graviton chat interface screenshot as: `public/images/graviton-real.png`
+2. Save the Orbis dashboard screenshot as: `public/images/orbis-real.png` 
+3. Save the Atom mobile interface screenshot as: `public/images/atom-real.png`
+
+Let me update the code to use these new images:

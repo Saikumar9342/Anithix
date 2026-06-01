@@ -255,7 +255,7 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 3. SPACESHIP SCROLL FLIGHT PATH (Cruises through layout)
+    // 3. SPACESHIP SCROLL FLIGHT PATH (Enhanced to interact with products)
     // ──────────────────────────────────────────────────────────────────────────
     let sx = 0;
     let sy = 0.4;
@@ -296,56 +296,62 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
       }
       
     } else if (p >= 0.20 && p < 0.45) {
-      // TRANSITION HERO -> PRODUCTS TOP: Swoop right and roll
+      // TRANSITION HERO -> GRAVITON PRODUCT: Ship approaches Graviton interface
       const factor = (p - 0.20) / 0.25;
       const eased = Math.sin((factor * Math.PI) / 2); // Sine ease
       
-      sx = THREE.MathUtils.lerp(-1.3, 1.3, eased);
-      sy = THREE.MathUtils.lerp(0.4, -0.4, eased) + Math.sin(t * 1.2) * 0.04;
-      sz = 2.0;
+      // Ship moves toward where Graviton interface would be (right side)
+      sx = THREE.MathUtils.lerp(0.4, 1.8, eased);
+      sy = THREE.MathUtils.lerp(0.0, 0.2, eased) + Math.sin(t * 1.2) * 0.04;
+      sz = THREE.MathUtils.lerp(1.5, 1.2, eased); // Move closer to inspect
 
-      sRotY = -Math.PI / 2 + eased * Math.PI; // Pivots around as it glides right
-      sRotZ = -0.35 * Math.sin(factor * Math.PI); // Strong roll banking
-      sRotX = -0.05 + Math.sin(t * 1.2) * 0.02;
+      // Ship rotates to "scan" the Graviton interface
+      sRotY = THREE.MathUtils.lerp(-Math.PI * 0.5, -Math.PI * 0.3, eased);
+      sRotZ = -0.15 * Math.sin(factor * Math.PI); // Gentle inspection tilt
+      sRotX = -0.05 + Math.sin(t * 1.5) * 0.03; // Scanning motion
       
     } else if (p >= 0.45 && p < 0.70) {
-      // TRANSITION PRODUCTS TOP -> PRODUCTS BOTTOM: Swoop back left
+      // GRAVITON -> ATOM PRODUCT: Ship travels to mobile device area
       const factor = (p - 0.45) / 0.25;
       const eased = factor * factor * (3 - 2 * factor); // smoothstep
       
-      sx = THREE.MathUtils.lerp(1.3, -1.3, eased);
-      sy = THREE.MathUtils.lerp(-0.4, -0.5, eased) + Math.sin(t * 1.2) * 0.04;
-      sz = 2.0;
+      // Ship moves to left side where Atom mobile interface is
+      sx = THREE.MathUtils.lerp(1.8, -1.5, eased);
+      sy = THREE.MathUtils.lerp(0.2, -0.1, eased) + Math.sin(t * 1.3) * 0.05;
+      sz = THREE.MathUtils.lerp(1.2, 1.0, eased); // Even closer for mobile inspection
 
-      sRotY = Math.PI / 2 - eased * Math.PI;
-      sRotZ = 0.25 * Math.sin(factor * Math.PI); // Reverse bank roll
-      sRotX = Math.sin(t * 1.2) * 0.02;
+      // Ship rotates to examine mobile interface
+      sRotY = THREE.MathUtils.lerp(-Math.PI * 0.3, Math.PI * 0.7, eased);
+      sRotZ = 0.2 * Math.sin(factor * Math.PI); // Mobile-focused tilt
+      sRotX = Math.sin(t * 1.8) * 0.04; // More active scanning for mobile
       
     } else if (p >= 0.70 && p < 0.85) {
-      // TRANSITION PRODUCTS BOTTOM -> CONTACT: Cruise to middle-right
+      // ATOM -> ORBIS PRODUCT: Ship investigates content automation
       const factor = (p - 0.70) / 0.15;
       const eased = factor * factor; // ease-in
       
-      sx = THREE.MathUtils.lerp(-1.3, 1.2, eased);
-      sy = THREE.MathUtils.lerp(-0.5, -0.4, eased) + Math.sin(t * 1.2) * 0.03;
-      sz = 2.0;
+      // Ship moves to center-right for Orbis dashboard
+      sx = THREE.MathUtils.lerp(-1.5, 1.4, eased);
+      sy = THREE.MathUtils.lerp(-0.1, 0.3, eased) + Math.sin(t * 1.4) * 0.04;
+      sz = THREE.MathUtils.lerp(1.0, 1.3, eased); // Pull back for dashboard overview
 
-      sRotY = -Math.PI / 2 + eased * Math.PI * 0.8;
-      sRotZ = -0.20 * factor;
-      sRotX = Math.sin(t * 1.2) * 0.02;
+      // Ship rotates to analyze content flows
+      sRotY = THREE.MathUtils.lerp(Math.PI * 0.7, -Math.PI * 0.4, eased);
+      sRotZ = -0.25 * Math.sin(factor * Math.PI * 2); // Oscillating analysis
+      sRotX = Math.sin(t * 2.0) * 0.03; // Rapid content scanning
       
     } else {
-      // FOOTER DOCKING & LANDING (p >= 0.85 to 1.0): Merge with time-based loop!
+      // ORBIS -> FOOTER DOCKING & LANDING (p >= 0.85 to 1.0): Enhanced departure sequence
       const factor = THREE.MathUtils.clamp((p - 0.85) / 0.15, 0, 1);
       const eased = factor * factor * (3 - 2 * factor);
       
       // Scroll destination coordinate in Footer (center)
-      const scrollSx = THREE.MathUtils.lerp(1.2, 0.0, eased);
-      const scrollSy = THREE.MathUtils.lerp(-0.4, 0.15, eased);
-      const scrollSz = 2.0;
+      const scrollSx = THREE.MathUtils.lerp(1.4, 0.0, eased);
+      const scrollSy = THREE.MathUtils.lerp(0.3, 0.15, eased);
+      const scrollSz = THREE.MathUtils.lerp(1.3, 2.0, eased); // Pull back for departure
       
       // Time-driven Footer docking timeline (10-second loop cycle)
-      const cycle = 10;
+      const cycle = 12; // Extended cycle for more dramatic departure
       const loopP = t % cycle;
       
       let loopSx = 0;
@@ -355,47 +361,48 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
       let loopRotY = -Math.PI / 2;
       let loopRotZ = 0;
       
-      if (loopP < 2.5) {
-        // Cruise-in from right
-        const lf = loopP / 2.5;
+      if (loopP < 3.0) {
+        // Enhanced cruise-in from right with product inspection complete
+        const lf = loopP / 3.0;
         const le = 1 - Math.pow(1 - lf, 3);
-        loopSx = 12.0 - le * 12.0;
-        loopSy = 0.25 + Math.sin(t * 1.8) * 0.05;
+        loopSx = 15.0 - le * 15.0; // Start further out
+        loopSy = 0.4 + Math.sin(t * 1.8) * 0.06; // Higher approach
         loopRotY = -Math.PI / 2;
-        loopRotX = Math.sin(t * 1.8) * 0.02;
-        loopRotZ = 0.08 * (1 - lf);
-      } else if (loopP >= 2.5 && loopP < 3.5) {
-        // Dock rotation
-        const lf = (loopP - 2.5) / 1.0;
+        loopRotX = Math.sin(t * 1.8) * 0.03;
+        loopRotZ = 0.12 * (1 - lf); // More dramatic banking
+      } else if (loopP >= 3.0 && loopP < 4.5) {
+        // Extended dock rotation with "mission complete" feel
+        const lf = (loopP - 3.0) / 1.5;
         const le = Math.sin((lf * Math.PI) / 2);
         loopSx = 0;
-        loopSy = 0.25 + Math.sin(t * 1.5) * 0.06;
+        loopSy = 0.25 + Math.sin(t * 1.5) * 0.08;
         loopRotY = -Math.PI / 2 * (1 - le);
-        loopRotX = Math.sin(t * 1.5) * 0.02;
-      } else if (loopP >= 3.5 && loopP < 7.0) {
-        // Center assembly hold hover
+        loopRotX = Math.sin(t * 1.5) * 0.03;
+        loopRotZ = Math.cos(t * 2.0) * 0.02; // Gentle celebration wobble
+      } else if (loopP >= 4.5 && loopP < 8.5) {
+        // Extended center assembly hold with "data processing" hover
         loopSx = 0;
-        loopSy = 0.25 + Math.sin(t * 1.5) * 0.07;
-        loopRotY = Math.sin(t * 0.5) * 0.03;
-        loopRotX = Math.sin(t * 1.5) * 0.02;
-        loopRotZ = Math.cos(t * 1.5) * 0.02;
-      } else if (loopP >= 7.0 && loopP < 8.0) {
-        // Pivot left thruster charge
-        const lf = (loopP - 7.0) / 1.0;
+        loopSy = 0.25 + Math.sin(t * 1.2) * 0.09;
+        loopRotY = Math.sin(t * 0.4) * 0.05; // Slow scanning motion
+        loopRotX = Math.sin(t * 1.2) * 0.03;
+        loopRotZ = Math.cos(t * 1.8) * 0.03; // Processing data wobble
+      } else if (loopP >= 8.5 && loopP < 9.5) {
+        // Enhanced pivot left thruster charge
+        const lf = (loopP - 8.5) / 1.0;
         const le = lf * lf;
         loopSx = 0;
-        loopSy = 0.25 - le * 0.15 + Math.sin(t * 2.5) * 0.04;
+        loopSy = 0.25 - le * 0.2 + Math.sin(t * 3.0) * 0.05;
         loopRotY = -Math.PI / 2 * le;
-        loopRotX = -0.05 * le;
-      } else if (loopP >= 8.0 && loopP < 9.2) {
-        // Hyper-acceleration takeoff left
-        const lf = (loopP - 8.0) / 1.2;
-        const le = Math.pow(lf, 3);
-        loopSx = -le * 12.0;
-        loopSy = 0.1 + le * 0.8 + Math.sin(t * 4.0) * 0.03;
+        loopRotX = -0.08 * le; // More dramatic nose-down
+      } else if (loopP >= 9.5 && loopP < 11.0) {
+        // Hyper-acceleration takeoff left with mission complete
+        const lf = (loopP - 9.5) / 1.5;
+        const le = Math.pow(lf, 2.5); // More dramatic acceleration curve
+        loopSx = -le * 18.0; // Faster departure
+        loopSy = 0.05 + le * 1.2 + Math.sin(t * 5.0) * 0.04;
         loopRotY = -Math.PI / 2;
-        loopRotX = 0.05 * lf;
-        loopRotZ = 0.35 * lf;
+        loopRotX = 0.08 * lf;
+        loopRotZ = 0.45 * lf; // More dramatic departure roll
       } else {
         // Offscreen cooldown hidden
         loopSx = -99.0;
@@ -408,9 +415,9 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
       sy = THREE.MathUtils.lerp(scrollSy, loopSy, mergeFactor);
       sz = THREE.MathUtils.lerp(scrollSz, loopSz, mergeFactor);
       
-      sRotX = THREE.MathUtils.lerp(Math.sin(t * 1.2) * 0.02, loopRotX, mergeFactor);
-      sRotY = THREE.MathUtils.lerp(-Math.PI / 2 + eased * Math.PI * 0.8, loopRotY, mergeFactor);
-      sRotZ = THREE.MathUtils.lerp(-0.20 * factor, loopRotZ, mergeFactor);
+      sRotX = THREE.MathUtils.lerp(Math.sin(t * 2.0) * 0.03, loopRotX, mergeFactor);
+      sRotY = THREE.MathUtils.lerp(-Math.PI * 0.4, loopRotY, mergeFactor);
+      sRotZ = THREE.MathUtils.lerp(-0.25 * Math.sin(factor * Math.PI * 2), loopRotZ, mergeFactor);
 
       // Hide ship when time loop puts it far offscreen
       if (spaceshipRef.current) {

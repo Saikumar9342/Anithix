@@ -6,31 +6,6 @@ import { JellyText } from "@/components/animations/JellyText";
 import { WarpEffect } from "@/components/animations/WarpEffect";
 import { Sparkles, ArrowRight } from "lucide-react";
 
-function TiltCard({
-  children,
-  style,
-  className,
-  onMouseMove,
-  onMouseLeave
-}: {
-  children: React.ReactNode;
-  style?: any;
-  className?: string;
-  onMouseMove?: any;
-  onMouseLeave?: any;
-}) {
-  return (
-    <motion.div
-      onMouseMove={onMouseMove}
-      onMouseLeave={onMouseLeave}
-      style={style}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
 function VisualCollage({
   children,
   accentColor,
@@ -48,14 +23,14 @@ function VisualCollage({
     const rect = e.currentTarget.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    rotX.set(-((mouseY - height / 2) / (height / 2)) * 7);
-    rotY.set(((mouseX - width / 2) / (width / 2)) * 7);
-    glowX.set(mouseX);
-    glowY.set(mouseY);
-    glowOpacity.set(0.18);
+    const x = (e.clientX - rect.left) / width - 0.5;
+    const y = (e.clientY - rect.top) / height - 0.5;
+    
+    rotX.set(-y * 12);
+    rotY.set(x * 12);
+    glowX.set(e.clientX - rect.left);
+    glowY.set(e.clientY - rect.top);
+    glowOpacity.set(0.6);
   };
 
   const handleMouseLeave = () => {
@@ -68,26 +43,36 @@ function VisualCollage({
     <motion.div
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      style={{ rotateX: rotX, rotateY: rotY, transformStyle: "preserve-3d" }}
-      className="w-full h-full relative flex items-center justify-center pointer-events-auto"
+      style={{
+        rotateX: rotX,
+        rotateY: rotY,
+        transformStyle: "preserve-3d",
+      }}
+      className="relative w-full h-full cursor-pointer"
     >
-      {/* Floating Radial Cursor Glow wash behind the mockup */}
       <motion.div
+        className="absolute pointer-events-none rounded-full"
         style={{
-          position: "absolute",
+          width: 400,
+          height: 400,
           left: glowX,
           top: glowY,
-          width: "320px",
-          height: "320px",
-          background: `radial-gradient(circle, ${accentColor} 0%, transparent 70%)`,
-          transform: "translate(-50%, -50%)",
-          pointerEvents: "none",
+          x: "-50%",
+          y: "-50%",
+          background: `radial-gradient(circle, ${accentColor}40 0%, transparent 70%)`,
           opacity: glowOpacity,
-          mixBlendMode: "screen",
+          filter: "blur(40px)",
           zIndex: 0,
         }}
       />
-      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", transformStyle: "preserve-3d", position: "relative" }}>
+      
+      <div 
+        className="relative w-full h-full flex items-center justify-center"
+        style={{ 
+          transformStyle: "preserve-3d",
+          filter: "drop-shadow(0 25px 50px rgba(0,0,0,0.5))",
+        }}
+      >
         {children}
       </div>
     </motion.div>
@@ -130,43 +115,13 @@ function HorizontalSlide({
       }}
       className="shrink-0 transition-colors duration-1000"
     >
-      {/* Soft color wash background glow (keeps stars visible!) */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-30"
+        className="absolute inset-0 pointer-events-none"
         style={{
           background: `radial-gradient(circle at center, ${accentColor}1c 0%, transparent 65%)`
         }}
       />
-      {/* Massive outline background text (Delassus styling) */}
-      <div
-        style={{
-          position: "absolute",
-          [alignRight ? "left" : "right"]: "2%",
-          top: "50%",
-          transform: "translateY(-50%) rotate(90deg)",
-          transformOrigin: "center center",
-          zIndex: 1,
-          pointerEvents: "none",
-          userSelect: "none",
-          opacity: 0.05,
-        }}
-      >
-        <span
-          style={{
-            fontSize: "clamp(8rem, 16vw, 16rem)",
-            fontWeight: 950,
-            color: "transparent",
-            WebkitTextStroke: "2px rgba(255,255,255,0.8)",
-            letterSpacing: "0.05em",
-          }}
-        >
-          {title}
-        </span>
-      </div>
-
-      {/* Layout Grid */}
       <div className="wrap absolute inset-0 z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-        {/* TEXT PANEL: Stiff, clean typography (Span 5) */}
         <div
           className={`lg:col-span-5 flex flex-col items-start ${
             alignRight ? "lg:order-2" : "lg:order-1"
@@ -255,7 +210,6 @@ function HorizontalSlide({
           </div>
         </div>
 
-        {/* VISUAL COLLAGE: Interactive layered elements floating (Span 7) */}
         <div
           className={`lg:col-span-7 h-[70vh] relative flex items-center justify-center ${
             alignRight ? "lg:order-1" : "lg:order-2"
@@ -278,7 +232,6 @@ export function Products() {
     offset: ["start start", "end end"],
   });
 
-  // 4 slides in horizontal pinner (Intro + 3 products) = translate 0% to -75%
   const xTranslation = useTransform(scrollYProgress, [0, 1], ["0%", "-75%"]);
 
   const triggerWarp = useCallback((url: string) => {
@@ -298,7 +251,6 @@ export function Products() {
     <>
       <WarpEffect active={warpActive} onComplete={handleWarpComplete} />
       <div ref={containerRef} style={{ height: "300vh", position: "relative" }}>
-        {/* Sticky full-screen viewport */}
         <section
           id="products"
           style={{
@@ -312,21 +264,9 @@ export function Products() {
             justifyContent: "center",
           }}
         >
-          {/* Subtle grid mesh overlay */}
-          <div
-            className="absolute inset-0 pointer-events-none opacity-[0.03]"
-            style={{
-              backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px)`,
-              backgroundSize: "30px 30px",
-              zIndex: 2,
-            }}
-          />
-
-          {/* Horizontal scroll track */}
           <motion.div
             style={{ x: xTranslation, display: "flex", width: "400vw", height: "100%", transformStyle: "preserve-3d" }}
           >
-            {/* SLIDE 0: INTRO */}
             <div
               style={{
                 width: "100vw",
@@ -369,286 +309,481 @@ export function Products() {
               </div>
             </div>
 
-            {/* SLIDE 1: GRAVITON */}
             <HorizontalSlide
               index={1}
               title="Graviton"
               subtitle="Your personal AI workspace with a newspaper soul."
-              desc="Connect every AI provider in one intelligent interface. Run local models via Ollama or connect cloud providers — wrapped in a deeply customizable editorial interface."
+              desc="The ultimate AI command center that unifies every AI provider into one intelligent interface. Run local models via Ollama, connect to OpenAI, Claude, Gemini, and more — all wrapped in a beautifully crafted editorial interface inspired by the world's finest newspapers. Built for researchers, developers, and AI enthusiasts who demand both power and elegance."
               alignRight={false}
               bgColor="#181329"
               accentColor="#a78bfa"
               onWarp={() => triggerWarp("https://graviton.anithix.com")}
               collage={
                 <VisualCollage accentColor="#a78bfa">
-                  {/* Massive back mockup with macOS Window Frame header */}
+                  {/* Main Desktop Interface */}
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.9, y: 50 }}
-                    whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                    initial={{ opacity: 0, scale: 0.8, y: 80, rotateX: 20 }}
+                    whileInView={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 1 }}
-                    className="w-[80%] h-[75%] rounded-[1.5rem] overflow-hidden border border-white/10 shadow-2xl relative flex flex-col bg-black/40"
-                    style={{ transform: "translateZ(10px)", transformStyle: "preserve-3d" }}
+                    transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                    className="w-[85%] h-[80%] rounded-[2rem] overflow-hidden border border-white/15 shadow-2xl relative flex flex-col"
+                    style={{ 
+                      transform: "translateZ(20px)", 
+                      transformStyle: "preserve-3d",
+                      background: "linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 100%)",
+                      boxShadow: "0 30px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.1)"
+                    }}
                   >
-                    {/* macOS Window Header */}
-                    <div className="flex items-center gap-1.5 px-6 py-3.5 border-b border-white/5 bg-white/[0.02]">
-                      <div className="w-2 h-2 rounded-full bg-[#ff5f56]" />
-                      <div className="w-2 h-2 rounded-full bg-[#ffbd2e]" />
-                      <div className="w-2 h-2 rounded-full bg-[#27c93f]" />
-                      <div className="text-[10px] text-white/20 font-mono ml-4 tracking-wider uppercase">graviton.anithix.com</div>
+                    {/* Enhanced macOS Window Header */}
+                    <div className="flex items-center gap-2 px-6 py-4 border-b border-white/10 bg-gradient-to-r from-white/[0.05] to-white/[0.02]">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-[#ff5f56] shadow-lg" />
+                        <div className="w-3 h-3 rounded-full bg-[#ffbd2e] shadow-lg" />
+                        <div className="w-3 h-3 rounded-full bg-[#27c93f] shadow-lg" />
+                      </div>
+                      <div className="flex-1 flex justify-center">
+                        <div className="text-xs text-white/40 font-mono tracking-wider uppercase bg-white/5 px-3 py-1 rounded-full">
+                          graviton.anithix.com
+                        </div>
+                      </div>
                     </div>
+                    
+                    {/* Enhanced content area */}
                     <div className="flex-1 overflow-hidden relative">
-                      <img src="/images/graviton.png" alt="Graviton Desktop" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-transparent" />
+                      <img 
+                        src="/images/graviton-real.png" 
+                        alt="Graviton Desktop" 
+                        className="w-full h-full object-cover"
+                        style={{ filter: "brightness(1.1) contrast(1.05)" }}
+                      />
+                      {/* Overlay glow */}
+                      <div 
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          background: `radial-gradient(circle at 60% 40%, #a78bfa20 0%, transparent 60%)`
+                        }}
+                      />
                     </div>
                   </motion.div>
 
-                  {/* Floating features blocks with translateZ(40px) */}
+                  {/* Clean, professional feature indicators */}
                   <motion.div
-                    animate={{ y: [0, -15, 0] }}
-                    transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute top-[6%] right-[0%] glass-panel p-6 rounded-[1.5rem] border border-white/10 bg-black/60 shadow-2xl max-w-[200px]"
-                    style={{ transform: "translateZ(40px)" }}
+                    initial={{ opacity: 0, x: 30, y: 20 }}
+                    whileInView={{ opacity: 1, x: 0, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8, delay: 0.3 }}
+                    className="absolute top-[15%] right-[8%] p-5 rounded-lg border border-white/10 shadow-lg max-w-[220px]"
+                    style={{ 
+                      transform: "translateZ(40px)",
+                      background: "rgba(8,8,10,0.85)",
+                      backdropFilter: "blur(20px)",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(167,139,250,0.1)"
+                    }}
                   >
-                    <span className="text-xl mb-2 block">📰</span>
-                    <h5 style={{ fontWeight: 800, fontSize: "0.9rem", color: "#fff", marginBottom: "0.25rem" }}>The Brief</h5>
-                    <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)" }}>Daily live news curated by local AI.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-2 h-2 rounded-full bg-purple-400" />
+                      <span className="text-xs font-mono text-purple-400 uppercase tracking-wider">Live</span>
+                    </div>
+                    <h6 className="font-semibold text-white text-sm mb-2">The Brief</h6>
+                    <p className="text-xs text-white/60 leading-relaxed">Daily live news curated by local AI models with intelligent summarization.</p>
                   </motion.div>
 
                   <motion.div
-                    animate={{ y: [0, 15, 0] }}
-                    transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                    className="absolute bottom-[6%] left-[0%] glass-panel p-6 rounded-[1.5rem] border border-white/10 bg-black/60 shadow-2xl max-w-[200px]"
-                    style={{ transform: "translateZ(40px)" }}
+                    initial={{ opacity: 0, x: -30, y: 20 }}
+                    whileInView={{ opacity: 1, x: 0, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8, delay: 0.5 }}
+                    className="absolute bottom-[15%] left-[8%] p-5 rounded-lg border border-white/10 shadow-lg max-w-[220px]"
+                    style={{ 
+                      transform: "translateZ(40px)",
+                      background: "rgba(8,8,10,0.85)",
+                      backdropFilter: "blur(20px)",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(167,139,250,0.1)"
+                    }}
                   >
-                    <span className="text-xl mb-2 block">◐</span>
-                    <h5 style={{ fontWeight: 800, fontSize: "0.9rem", color: "#fff", marginBottom: "0.25rem" }}>Multi-Engine</h5>
-                    <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)" }}>Ollama local models + cloud in one place.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-2 h-2 rounded-full bg-purple-400" />
+                      <span className="text-xs font-mono text-purple-400 uppercase tracking-wider">Engine</span>
+                    </div>
+                    <h6 className="font-semibold text-white text-sm mb-2">Multi-Engine</h6>
+                    <p className="text-xs text-white/60 leading-relaxed">Ollama local models + cloud providers unified in one elegant interface.</p>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8, delay: 0.7 }}
+                    className="absolute top-[50%] right-[15%] p-4 rounded-lg border border-white/10 shadow-lg max-w-[180px]"
+                    style={{ 
+                      transform: "translateZ(30px)",
+                      background: "rgba(8,8,10,0.85)",
+                      backdropFilter: "blur(20px)",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(167,139,250,0.1)"
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-purple-400" />
+                      <span className="text-xs font-mono text-purple-400 uppercase tracking-wider">Themes</span>
+                    </div>
+                    <h6 className="font-semibold text-white text-xs mb-2">8 Themes</h6>
+                    <p className="text-xs text-white/60 leading-relaxed">From minimal to editorial, customize your workspace aesthetic.</p>
                   </motion.div>
                 </VisualCollage>
               }
             >
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                {["Multi-Provider AI", "Ollama Models", "8 Themes"].map((tag) => (
-                  <span
+              <div className="flex flex-wrap gap-3">
+                {[
+                  "Multi-Provider AI",
+                  "Ollama Integration", 
+                  "8 Premium Themes",
+                  "Research Mode",
+                  "News Dashboard",
+                  "Vision Models"
+                ].map((tag, i) => (
+                  <motion.span
                     key={tag}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.3, delay: 0.1 * i }}
+                    className="px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:bg-white/10"
                     style={{
-                      fontSize: "0.72rem",
-                      fontWeight: 700,
-                      letterSpacing: "0.08em",
-                      padding: "0.35rem 0.85rem",
-                      borderRadius: "100px",
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      color: "rgba(255,255,255,0.7)",
+                      background: "rgba(167,139,250,0.1)",
+                      border: "1px solid rgba(167,139,250,0.2)",
+                      color: "rgba(255,255,255,0.8)",
                     }}
                   >
                     {tag}
-                  </span>
+                  </motion.span>
                 ))}
               </div>
             </HorizontalSlide>
 
-            {/* SLIDE 2: ATOM */}
             <HorizontalSlide
               index={2}
               title="Atom"
               subtitle="Your portfolio, from your pocket."
-              desc="A mobile-first builder that lets you create and manage professional portfolio websites entirely from your smartphone. Upload a resume — AI does the rest."
+              desc="The world's first truly mobile-native portfolio builder. Create stunning professional websites entirely from your smartphone. Upload your resume, and watch AI transform it into a beautiful, responsive portfolio in seconds. Edit templates, manage content, and publish updates — all from your pocket. Perfect for freelancers, creatives, and professionals on the go."
               alignRight={true}
               bgColor="#07202b"
               accentColor="#06b6d4"
               onWarp={() => triggerWarp("https://atom.anithix.com")}
               collage={
                 <VisualCollage accentColor="#06b6d4">
-                  {/* Central mobile mockup with dynamic island smartphone bezel */}
+                  {/* Enhanced mobile mockup with premium styling */}
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.9, y: 50 }}
-                    whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                    initial={{ opacity: 0, scale: 0.7, y: 100, rotateX: 30 }}
+                    whileInView={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 1.2 }}
-                    className="w-[44%] h-[80%] rounded-[2.8rem] overflow-hidden border-[6px] border-[#1d1d1f] shadow-2xl relative bg-black flex flex-col"
-                    style={{ transform: "translateZ(10px)", transformStyle: "preserve-3d" }}
+                    transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
+                    className="w-[50%] h-[85%] rounded-[3rem] overflow-hidden border-[8px] shadow-2xl relative flex flex-col"
+                    style={{ 
+                      transform: "translateZ(30px)", 
+                      transformStyle: "preserve-3d",
+                      borderColor: "#1a1a1a",
+                      background: "linear-gradient(135deg, #000000 0%, #1a1a1a 100%)",
+                      boxShadow: `
+                        0 40px 80px rgba(0,0,0,0.9),
+                        0 0 0 1px rgba(6,182,212,0.2),
+                        inset 0 1px 0 rgba(255,255,255,0.1)
+                      `
+                    }}
                   >
-                    {/* Dynamic Island Screen Header cut-out */}
-                    <div className="absolute top-3.5 left-1/2 -translate-x-1/2 w-16 h-3.5 rounded-full bg-black z-20" />
+                    {/* Enhanced Dynamic Island */}
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 w-20 h-4 rounded-full bg-black z-20 shadow-inner" 
+                         style={{ boxShadow: "inset 0 2px 4px rgba(0,0,0,0.8)" }} />
+                    
+                    {/* Screen content with enhanced styling */}
                     <div className="flex-1 overflow-hidden relative">
-                      <img src="/images/atom.png" alt="Atom Mobile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/20 to-transparent" />
+                      <img 
+                        src="/images/atom.png" 
+                        alt="Atom Mobile" 
+                        className="w-full h-full object-cover"
+                        style={{ filter: "brightness(1.1) contrast(1.05)" }}
+                      />
+                      {/* Screen reflection effect */}
+                      <div 
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          background: `
+                            linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 30%),
+                            radial-gradient(circle at 70% 30%, #06b6d420 0%, transparent 50%)
+                          `
+                        }}
+                      />
                     </div>
                   </motion.div>
 
-                  {/* Floating features blocks framed diagonally and cleanly spaced */}
+                  {/* Clean, professional feature indicators */}
                   <motion.div
-                    animate={{ y: [0, -12, 0] }}
-                    transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute top-[15%] left-[2%] glass-panel p-6 rounded-[1.5rem] border border-white/10 bg-black/60 shadow-2xl max-w-[200px]"
-                    style={{ transform: "translateZ(40px)" }}
+                    initial={{ opacity: 0, x: -30, y: 20 }}
+                    whileInView={{ opacity: 1, x: 0, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8, delay: 0.4 }}
+                    className="absolute top-[20%] left-[8%] p-5 rounded-lg border border-white/10 shadow-lg max-w-[220px]"
+                    style={{ 
+                      transform: "translateZ(40px)",
+                      background: "rgba(8,8,10,0.85)",
+                      backdropFilter: "blur(20px)",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(6,182,212,0.1)"
+                    }}
                   >
-                    <span className="text-xl mb-2 block">📄</span>
-                    <h5 style={{ fontWeight: 800, fontSize: "0.9rem", color: "#fff", marginBottom: "0.25rem" }}>Resume Parsing</h5>
-                    <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)" }}>PDF upload to live site in 10 seconds.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-2 h-2 rounded-full bg-cyan-400" />
+                      <span className="text-xs font-mono text-cyan-400 uppercase tracking-wider">AI Parser</span>
+                    </div>
+                    <h6 className="font-semibold text-white text-sm mb-2">AI Resume Parser</h6>
+                    <p className="text-xs text-white/60 leading-relaxed">Upload PDF resume, get live portfolio site in 10 seconds with AI enhancement.</p>
                   </motion.div>
 
                   <motion.div
-                    animate={{ y: [0, 12, 0] }}
-                    transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
-                    className="absolute bottom-[15%] right-[2%] glass-panel p-6 rounded-[1.5rem] border border-white/10 bg-black/60 shadow-2xl max-w-[200px]"
-                    style={{ transform: "translateZ(40px)" }}
+                    initial={{ opacity: 0, x: 30, y: 20 }}
+                    whileInView={{ opacity: 1, x: 0, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8, delay: 0.6 }}
+                    className="absolute bottom-[20%] right-[8%] p-5 rounded-lg border border-white/10 shadow-lg max-w-[220px]"
+                    style={{ 
+                      transform: "translateZ(40px)",
+                      background: "rgba(8,8,10,0.85)",
+                      backdropFilter: "blur(20px)",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(6,182,212,0.1)"
+                    }}
                   >
-                    <span className="text-xl mb-2 block">📱</span>
-                    <h5 style={{ fontWeight: 800, fontSize: "0.9rem", color: "#fff", marginBottom: "0.25rem" }}>Pocket Build</h5>
-                    <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)" }}>Edit templates completely on mobile.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-2 h-2 rounded-full bg-cyan-400" />
+                      <span className="text-xs font-mono text-cyan-400 uppercase tracking-wider">Mobile</span>
+                    </div>
+                    <h6 className="font-semibold text-white text-sm mb-2">Mobile-First Builder</h6>
+                    <p className="text-xs text-white/60 leading-relaxed">Edit templates, manage content, and publish updates completely on mobile.</p>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8, delay: 0.8 }}
+                    className="absolute top-[60%] left-[15%] p-4 rounded-lg border border-white/10 shadow-lg max-w-[180px]"
+                    style={{ 
+                      transform: "translateZ(30px)",
+                      background: "rgba(8,8,10,0.85)",
+                      backdropFilter: "blur(20px)",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(6,182,212,0.1)"
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-cyan-400" />
+                      <span className="text-xs font-mono text-cyan-400 uppercase tracking-wider">Sync</span>
+                    </div>
+                    <h6 className="font-semibold text-white text-xs mb-2">Live Sync</h6>
+                    <p className="text-xs text-white/60 leading-relaxed">Real-time updates across all devices and platforms.</p>
                   </motion.div>
                 </VisualCollage>
               }
             >
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                {["Resume to Portfolio", "Mobile Management", "Live Sync"].map(
-                  (tag) => (
-                    <span
-                      key={tag}
-                      style={{
-                        fontSize: "0.72rem",
-                        fontWeight: 700,
-                        letterSpacing: "0.08em",
-                        padding: "0.35rem 0.85rem",
-                        borderRadius: "100px",
-                        background: "rgba(255,255,255,0.06)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        color: "rgba(255,255,255,0.7)",
-                      }}
-                    >
-                      {tag}
-                    </span>
-                  )
-                )}
+              <div className="flex flex-wrap gap-3">
+                {[
+                  "AI Resume Parser",
+                  "Mobile Management", 
+                  "Live Sync",
+                  "Custom Domains",
+                  "Multi-Language",
+                  "Analytics Dashboard"
+                ].map((tag, i) => (
+                  <motion.span
+                    key={tag}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.3, delay: 0.1 * i }}
+                    className="px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:bg-white/10"
+                    style={{
+                      background: "rgba(6,182,212,0.1)",
+                      border: "1px solid rgba(6,182,212,0.2)",
+                      color: "rgba(255,255,255,0.8)",
+                    }}
+                  >
+                    {tag}
+                  </motion.span>
+                ))}
               </div>
             </HorizontalSlide>
 
-            {/* SLIDE 3: ORBIS */}
             <HorizontalSlide
               index={3}
               title="Orbis"
               subtitle="Automate your content universe."
-              desc="An AI Media OS that discovers trends, writes content, generates visuals, and publishes on autopilot. Analytics, A/B Testing, Smart Scheduling — all in one."
+              desc="The ultimate AI-powered content automation platform that transforms how you create and manage social media. Discover trending topics, generate compelling content, create stunning visuals, and publish across all platforms — completely on autopilot. Built-in A/B testing, smart scheduling, and deep analytics help you optimize every post for maximum engagement and growth."
               alignRight={false}
               bgColor="#07221b"
               accentColor="#10b981"
               onWarp={() => triggerWarp("https://orbis.anithix.com")}
               collage={
                 <VisualCollage accentColor="#10b981">
-                  {/* Central dashboard mock with macOS Window Frame header */}
+                  {/* Enhanced dashboard mockup */}
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.9, y: 50 }}
-                    whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                    initial={{ opacity: 0, scale: 0.8, y: 80, rotateX: 20 }}
+                    whileInView={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 1.1 }}
-                    className="w-[80%] h-[75%] rounded-[1.5rem] overflow-hidden border border-white/10 shadow-2xl relative flex flex-col bg-black/40"
-                    style={{ transform: "translateZ(10px)", transformStyle: "preserve-3d" }}
+                    transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
+                    className="w-[85%] h-[80%] rounded-[2rem] overflow-hidden border border-white/15 shadow-2xl relative flex flex-col"
+                    style={{ 
+                      transform: "translateZ(20px)", 
+                      transformStyle: "preserve-3d",
+                      background: "linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 100%)",
+                      boxShadow: "0 30px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.1)"
+                    }}
                   >
-                    {/* macOS Window Header */}
-                    <div className="flex items-center gap-1.5 px-6 py-3.5 border-b border-white/5 bg-white/[0.02]">
-                      <div className="w-2 h-2 rounded-full bg-[#ff5f56]" />
-                      <div className="w-2 h-2 rounded-full bg-[#ffbd2e]" />
-                      <div className="w-2 h-2 rounded-full bg-[#27c93f]" />
-                      <div className="text-[10px] text-white/20 font-mono ml-4 tracking-wider uppercase">orbis.anithix.com</div>
+                    {/* Enhanced macOS Window Header */}
+                    <div className="flex items-center gap-2 px-6 py-4 border-b border-white/10 bg-gradient-to-r from-white/[0.05] to-white/[0.02]">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-[#ff5f56] shadow-lg" />
+                        <div className="w-3 h-3 rounded-full bg-[#ffbd2e] shadow-lg" />
+                        <div className="w-3 h-3 rounded-full bg-[#27c93f] shadow-lg" />
+                      </div>
+                      <div className="flex-1 flex justify-center">
+                        <div className="text-xs text-white/40 font-mono tracking-wider uppercase bg-white/5 px-3 py-1 rounded-full">
+                          orbis.anithix.com
+                        </div>
+                      </div>
                     </div>
+                    
+                    {/* Enhanced content area */}
                     <div className="flex-1 overflow-hidden relative">
-                      <img src="/images/orbis.png" alt="Orbis Panel" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 to-transparent" />
+                      <img 
+                        src="/images/orbis.png" 
+                        alt="Orbis Panel" 
+                        className="w-full h-full object-cover"
+                        style={{ filter: "brightness(1.1) contrast(1.05)" }}
+                      />
+                      {/* Overlay glow */}
+                      <div 
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          background: `radial-gradient(circle at 60% 40%, #10b98120 0%, transparent 60%)`
+                        }}
+                      />
                     </div>
                   </motion.div>
 
-                  {/* Floating features blocks balanced diagonally */}
+                  {/* Clean, professional feature indicators */}
                   <motion.div
-                    animate={{ y: [0, -15, 0] }}
-                    transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute top-[6%] right-[0%] glass-panel p-6 rounded-[1.5rem] border border-white/10 bg-black/60 shadow-2xl max-w-[200px]"
-                    style={{ transform: "translateZ(40px)" }}
+                    initial={{ opacity: 0, x: 30, y: 20 }}
+                    whileInView={{ opacity: 1, x: 0, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8, delay: 0.3 }}
+                    className="absolute top-[15%] right-[8%] p-5 rounded-lg border border-white/10 shadow-lg max-w-[220px]"
+                    style={{ 
+                      transform: "translateZ(40px)",
+                      background: "rgba(8,8,10,0.85)",
+                      backdropFilter: "blur(20px)",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(16,185,129,0.1)"
+                    }}
                   >
-                    <span className="text-xl mb-2 block">📈</span>
-                    <h5 style={{ fontWeight: 800, fontSize: "0.9rem", color: "#fff", marginBottom: "0.25rem" }}>Auto Publish</h5>
-                    <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)" }}>Hands-off publishing on smart schedules.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <span className="text-xs font-mono text-emerald-400 uppercase tracking-wider">Auto</span>
+                    </div>
+                    <h6 className="font-semibold text-white text-sm mb-2">Auto Publish</h6>
+                    <p className="text-xs text-white/60 leading-relaxed">Hands-off publishing on smart schedules across all platforms.</p>
                   </motion.div>
 
                   <motion.div
-                    animate={{ y: [0, 15, 0] }}
-                    transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
-                    className="absolute bottom-[6%] left-[0%] glass-panel p-6 rounded-[1.5rem] border border-white/10 bg-black/60 shadow-2xl max-w-[200px]"
-                    style={{ transform: "translateZ(40px)" }}
+                    initial={{ opacity: 0, x: -30, y: 20 }}
+                    whileInView={{ opacity: 1, x: 0, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8, delay: 0.5 }}
+                    className="absolute bottom-[15%] left-[8%] p-5 rounded-lg border border-white/10 shadow-lg max-w-[220px]"
+                    style={{ 
+                      transform: "translateZ(40px)",
+                      background: "rgba(8,8,10,0.85)",
+                      backdropFilter: "blur(20px)",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(16,185,129,0.1)"
+                    }}
                   >
-                    <span className="text-xl mb-2 block">🌌</span>
-                    <h5 style={{ fontWeight: 800, fontSize: "0.9rem", color: "#fff", marginBottom: "0.25rem" }}>Media OS</h5>
-                    <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)" }}>A/B test and analyze content pipelines.</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <span className="text-xs font-mono text-emerald-400 uppercase tracking-wider">AI OS</span>
+                    </div>
+                    <h6 className="font-semibold text-white text-sm mb-2">AI Media OS</h6>
+                    <p className="text-xs text-white/60 leading-relaxed">A/B test and analyze content pipelines with deep insights.</p>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8, delay: 0.7 }}
+                    className="absolute top-[45%] left-[12%] p-4 rounded-lg border border-white/10 shadow-lg max-w-[180px]"
+                    style={{ 
+                      transform: "translateZ(30px)",
+                      background: "rgba(8,8,10,0.85)",
+                      backdropFilter: "blur(20px)",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(16,185,129,0.1)"
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <span className="text-xs font-mono text-emerald-400 uppercase tracking-wider">Trends</span>
+                    </div>
+                    <h6 className="font-semibold text-white text-xs mb-2">Trend Discovery</h6>
+                    <p className="text-xs text-white/60 leading-relaxed">AI finds viral topics before they explode.</p>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8, delay: 0.9 }}
+                    className="absolute bottom-[45%] right-[12%] p-4 rounded-lg border border-white/10 shadow-lg max-w-[180px]"
+                    style={{ 
+                      transform: "translateZ(30px)",
+                      background: "rgba(8,8,10,0.85)",
+                      backdropFilter: "blur(20px)",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(16,185,129,0.1)"
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <span className="text-xs font-mono text-emerald-400 uppercase tracking-wider">Visual</span>
+                    </div>
+                    <h6 className="font-semibold text-white text-xs mb-2">Visual Generation</h6>
+                    <p className="text-xs text-white/60 leading-relaxed">AI creates stunning visuals for every post.</p>
                   </motion.div>
                 </VisualCollage>
               }
             >
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                {["AI Media OS", "A/B Testing", "Smart Schedule"].map((tag) => (
-                  <span
+              <div className="flex flex-wrap gap-3">
+                {[
+                  "AI Content Generation",
+                  "Trend Discovery", 
+                  "Visual AI",
+                  "A/B Testing",
+                  "Smart Scheduling",
+                  "Deep Analytics"
+                ].map((tag, i) => (
+                  <motion.span
                     key={tag}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.3, delay: 0.1 * i }}
+                    className="px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:bg-white/10"
                     style={{
-                      fontSize: "0.72rem",
-                      fontWeight: 700,
-                      letterSpacing: "0.08em",
-                      padding: "0.35rem 0.85rem",
-                      borderRadius: "100px",
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      color: "rgba(255,255,255,0.7)",
+                      background: "rgba(16,185,129,0.1)",
+                      border: "1px solid rgba(16,185,129,0.2)",
+                      color: "rgba(255,255,255,0.8)",
                     }}
                   >
                     {tag}
-                  </span>
+                  </motion.span>
                 ))}
               </div>
             </HorizontalSlide>
           </motion.div>
-
-          {/* Slider progress indicators */}
-          <div
-            style={{
-              position: "absolute",
-              bottom: "2.5rem",
-              left: "50%",
-              transform: "translateX(-50%)",
-              display: "flex",
-              gap: "0.6rem",
-              alignItems: "center",
-              zIndex: 20,
-            }}
-          >
-            {[0, 1, 2, 3].map((i) => {
-              // Highlight indicator dynamically based on scrollYProgress. 
-              // Bounds: 4 slides = [0..0.25, 0.25..0.5, 0.5..0.75, 0.75..1.0]
-              const start = (i / 4) - 0.05;
-              const end = ((i + 1) / 4) + 0.05;
-              
-              const dotWidth = useTransform(
-                scrollYProgress,
-                [start < 0 ? 0 : start, i / 4, (i + 1) / 4, end > 1 ? 1 : end],
-                ["0.5rem", "2.5rem", "2.5rem", "0.5rem"]
-              );
-              
-              const dotOpacity = useTransform(
-                scrollYProgress,
-                [start < 0 ? 0 : start, i / 4, (i + 1) / 4, end > 1 ? 1 : end],
-                [0.25, 1.0, 1.0, 0.25]
-              );
-
-              return (
-                <motion.div
-                  key={i}
-                  style={{
-                    height: "0.25rem",
-                    borderRadius: "100px",
-                    background: "#fff",
-                    width: dotWidth,
-                    opacity: dotOpacity,
-                  }}
-                />
-              );
-            })}
-          </div>
         </section>
       </div>
     </>
