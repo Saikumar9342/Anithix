@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, Suspense, Component, type ReactNode, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useGLTF, useAnimations, Environment, Html, useProgress } from "@react-three/drei";
+import { useGLTF, useAnimations, Environment, useProgress } from "@react-three/drei";
 import * as THREE from "three";
 
 const SPACESHIP = "/models/spaceship.glb";
@@ -160,37 +160,18 @@ function GlobalLoader() {
   );
 }
 
-// ── Cinematic R3F Scene Controller ──────────────────────────────────────────
-interface SpaceSceneProps {
-  scrollProgress: number;
-}
-
-function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
+// ── Cinematic R3F Background Scene Controller ────────────────────────────────
+function BackgroundSpaceScene({ scrollProgress }: { scrollProgress: number }) {
   const planetRef = useRef<THREE.Group>(null);
   const asteroidRef = useRef<THREE.Group>(null);
   const asteroidGlowRef = useRef<THREE.Mesh>(null);
-  const spaceshipRef = useRef<THREE.Group>(null);
-  const laserRef      = useRef<THREE.Group>(null);
-  const laserLightRef = useRef<THREE.PointLight>(null);
   const explosionLightRef = useRef<THREE.PointLight>(null);
   const explosionGroupRef = useRef<THREE.Group>(null);
   const debrisRefs    = useRef<(THREE.Group | null)[]>(Array(DEBRIS_COUNT).fill(null));
+  const impactParticlesRef = useRef<THREE.Points>(null);
   
   const currentScroll = useRef(0);
   const shakeT = useRef(0);
-  
-  // Preload spaceship animations
-  const { scene: shipScene, animations: shipAnims } = useGLTF(SPACESHIP);
-  const { actions: shipActions } = useAnimations(shipAnims, spaceshipRef);
-
-  useEffect(() => {
-    if (shipActions) {
-      const actionName = Object.keys(shipActions)[0];
-      if (actionName && shipActions[actionName]) {
-        shipActions[actionName]?.play();
-      }
-    }
-  }, [shipActions]);
 
   // Travel path limits
   const ASTEROID_START   = { x: 4.5, y: -0.3, z: 1.5 };  // from right, lower
@@ -201,39 +182,45 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
   const PLANET_END   = { x: -2.8, y: -0.5, z: -1.0 };
   const PLANET_SCALE = 1.4;
 
+  // Seed impact particles pos/vel
+  const impactParticlesPos = useMemo(() => {
+    return new Float32Array(80 * 3);
+  }, []);
+
+  const impactParticlesVel = useMemo(() => {
+    const arr = new Float32Array(80 * 3);
+    for (let i = 0; i < 80; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(Math.random() * 2 - 1);
+      const speed = 0.6 + Math.random() * 2.4;
+      arr[i * 3]     = Math.sin(phi) * Math.cos(theta) * speed;
+      arr[i * 3 + 1] = Math.sin(phi) * Math.sin(theta) * speed;
+      arr[i * 3 + 2] = Math.cos(phi) * speed;
+    }
+    return arr;
+  }, []);
+
   useFrame((state, delta) => {
-    // Smooth scroll interpolation (creates beautiful Lenis momentum lag)
     currentScroll.current = THREE.MathUtils.lerp(currentScroll.current, scrollProgress, 0.08);
     const p = currentScroll.current;
     const t = state.clock.getElapsedTime();
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // 1. THE PLANET (saved, smaller, no lava planet cross-fade!)
-    // ──────────────────────────────────────────────────────────────────────────
+    // 1. Planet
     if (planetRef.current) {
       planetRef.current.rotation.y += delta * 0.05;
-
-      // Planet moves left as soon as user starts scrolling (p 0 → 0.20)
       const driftFactor = THREE.MathUtils.clamp(p / 0.20, 0, 1);
       const easedDrift = 1 - Math.pow(1 - driftFactor, 3);
-
       planetRef.current.position.x = THREE.MathUtils.lerp(PLANET_START.x, PLANET_END.x, easedDrift);
       planetRef.current.position.y = THREE.MathUtils.lerp(PLANET_START.y, PLANET_END.y, easedDrift);
       planetRef.current.position.z = PLANET_START.z;
       planetRef.current.scale.setScalar(PLANET_SCALE);
-      // Hide planet before reaching "Connected Suite" section (around p=0.45-0.50)
       planetRef.current.visible = p < 0.45;
     }
 
-
-    // ──────────────────────────────────────────────────────────────────────────
-    // 2. THE ASTEROID
-    // ──────────────────────────────────────────────────────────────────────────
-    // Approaching planet and getting destroyed at p = 0.15
-    // Asteroid: visible p=0.05→0.13, destroyed exactly when laser fires at p=0.08
+    // 2. Asteroid
     const isAsteroidAlive = p >= 0.05 && p < 0.13;
     const asteroidFactor = THREE.MathUtils.clamp((p - 0.05) / 0.08, 0, 1);
-    const easedAsteroid = Math.pow(asteroidFactor, 3); // slow start, rockets in
+    const easedAsteroid = Math.pow(asteroidFactor, 3);
 
     const ax = THREE.MathUtils.lerp(ASTEROID_START.x, ASTEROID_EXPLODE.x, easedAsteroid);
     const ay = THREE.MathUtils.lerp(ASTEROID_START.y, ASTEROID_EXPLODE.y, easedAsteroid);
@@ -243,7 +230,7 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
       asteroidRef.current.visible = isAsteroidAlive;
       asteroidRef.current.position.set(ax, ay, az);
       asteroidRef.current.scale.setScalar(0.55);
-      const spin = 0.3 + easedAsteroid * 1.2; // slow, realistic tumble
+      const spin = 0.3 + easedAsteroid * 1.2;
       asteroidRef.current.rotation.x += delta * spin;
       asteroidRef.current.rotation.z += delta * spin * 0.6;
     }
@@ -254,225 +241,7 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
       glowMat.opacity = isAsteroidAlive ? 0.1 + easedAsteroid * 0.4 : 0;
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // 3. SPACESHIP SCROLL FLIGHT PATH (Enhanced to interact with products)
-    // ──────────────────────────────────────────────────────────────────────────
-    let sx = 0;
-    let sy = 0.4;
-    let sz = 2.0;
-    let sRotX = 0;
-    let sRotY = 0;
-    let sRotZ = 0;
-
-    // Define multi-section path coordinate spline based on page scroll
-    if (p < 0.20) {
-      if (p < 0.05) {
-        // Idle: bottom-left area in front of planet, hovering calmly
-        sx = -0.6 + Math.sin(t * 0.9) * 0.06;
-        sy = -0.5 + Math.sin(t * 1.1) * 0.05;
-        sz = 1.5;
-        sRotY = Math.PI * 0.15;
-        sRotX = Math.sin(t * 1.0) * 0.02;
-        sRotZ = Math.cos(t * 0.8) * 0.02;
-      } else if (p >= 0.05 && p < 0.16) {
-        // Ship moves right to intercept — gets between asteroid and planet
-        const interceptF = THREE.MathUtils.clamp((p - 0.05) / 0.11, 0, 1);
-        const interceptE = 1 - Math.pow(1 - interceptF, 2);
-        sx = THREE.MathUtils.lerp(-0.6, 0.4, interceptE) + Math.sin(t * 0.9) * 0.03;
-        sy = THREE.MathUtils.lerp(-0.5, 0.0, interceptE) + Math.sin(t * 1.1) * 0.03;
-        sz = 1.5;
-        const dx = ax - sx, dy = ay - sy, dz2 = az - sz;
-        sRotY = Math.atan2(dx, dz2);
-        sRotX = -Math.atan2(dy, Math.sqrt(dx * dx + dz2 * dz2)) * 0.5;
-        sRotZ = Math.sin(t * 1.2) * 0.01;
-      } else {
-        // After firing — ship hovers at intercept position
-        sx = 0.4 + Math.sin(t * 0.9) * 0.04;
-        sy = 0.0 + Math.sin(t * 1.1) * 0.04;
-        sz = 1.5;
-        sRotY = -Math.PI * 0.5;
-        sRotX = Math.sin(t * 1.0) * 0.02;
-        sRotZ = Math.cos(t * 0.8) * 0.01;
-      }
-      
-    } else if (p >= 0.20 && p < 0.45) {
-      // TRANSITION HERO -> GRAVITON PRODUCT: Ship approaches Graviton interface
-      const factor = (p - 0.20) / 0.25;
-      const eased = Math.sin((factor * Math.PI) / 2); // Sine ease
-      
-      // Ship moves toward where Graviton interface would be (right side)
-      sx = THREE.MathUtils.lerp(0.4, 1.8, eased);
-      sy = THREE.MathUtils.lerp(0.0, 0.2, eased) + Math.sin(t * 1.2) * 0.04;
-      sz = THREE.MathUtils.lerp(1.5, 1.2, eased); // Move closer to inspect
-
-      // Ship rotates to "scan" the Graviton interface
-      sRotY = THREE.MathUtils.lerp(-Math.PI * 0.5, -Math.PI * 0.3, eased);
-      sRotZ = -0.15 * Math.sin(factor * Math.PI); // Gentle inspection tilt
-      sRotX = -0.05 + Math.sin(t * 1.5) * 0.03; // Scanning motion
-      
-    } else if (p >= 0.45 && p < 0.70) {
-      // GRAVITON -> ATOM PRODUCT: Ship travels to mobile device area
-      const factor = (p - 0.45) / 0.25;
-      const eased = factor * factor * (3 - 2 * factor); // smoothstep
-      
-      // Ship moves to left side where Atom mobile interface is
-      sx = THREE.MathUtils.lerp(1.8, -1.5, eased);
-      sy = THREE.MathUtils.lerp(0.2, -0.1, eased) + Math.sin(t * 1.3) * 0.05;
-      sz = THREE.MathUtils.lerp(1.2, 1.0, eased); // Even closer for mobile inspection
-
-      // Ship rotates to examine mobile interface
-      sRotY = THREE.MathUtils.lerp(-Math.PI * 0.3, Math.PI * 0.7, eased);
-      sRotZ = 0.2 * Math.sin(factor * Math.PI); // Mobile-focused tilt
-      sRotX = Math.sin(t * 1.8) * 0.04; // More active scanning for mobile
-      
-    } else if (p >= 0.70 && p < 0.85) {
-      // ATOM -> ORBIS PRODUCT: Ship investigates content automation
-      const factor = (p - 0.70) / 0.15;
-      const eased = factor * factor; // ease-in
-      
-      // Ship moves to center-right for Orbis dashboard
-      sx = THREE.MathUtils.lerp(-1.5, 1.4, eased);
-      sy = THREE.MathUtils.lerp(-0.1, 0.3, eased) + Math.sin(t * 1.4) * 0.04;
-      sz = THREE.MathUtils.lerp(1.0, 1.3, eased); // Pull back for dashboard overview
-
-      // Ship rotates to analyze content flows
-      sRotY = THREE.MathUtils.lerp(Math.PI * 0.7, -Math.PI * 0.4, eased);
-      sRotZ = -0.25 * Math.sin(factor * Math.PI * 2); // Oscillating analysis
-      sRotX = Math.sin(t * 2.0) * 0.03; // Rapid content scanning
-      
-    } else {
-      // ORBIS -> FOOTER DOCKING & LANDING (p >= 0.85 to 1.0): Enhanced departure sequence
-      const factor = THREE.MathUtils.clamp((p - 0.85) / 0.15, 0, 1);
-      const eased = factor * factor * (3 - 2 * factor);
-      
-      // Scroll destination coordinate in Footer (center)
-      const scrollSx = THREE.MathUtils.lerp(1.4, 0.0, eased);
-      const scrollSy = THREE.MathUtils.lerp(0.3, 0.15, eased);
-      const scrollSz = THREE.MathUtils.lerp(1.3, 2.0, eased); // Pull back for departure
-      
-      // Time-driven Footer docking timeline (10-second loop cycle)
-      const cycle = 12; // Extended cycle for more dramatic departure
-      const loopP = t % cycle;
-      
-      let loopSx = 0;
-      let loopSy = 0.25;
-      let loopSz = 2.0;
-      let loopRotX = 0;
-      let loopRotY = -Math.PI / 2;
-      let loopRotZ = 0;
-      
-      if (loopP < 3.0) {
-        // Enhanced cruise-in from right with product inspection complete
-        const lf = loopP / 3.0;
-        const le = 1 - Math.pow(1 - lf, 3);
-        loopSx = 15.0 - le * 15.0; // Start further out
-        loopSy = 0.4 + Math.sin(t * 1.8) * 0.06; // Higher approach
-        loopRotY = -Math.PI / 2;
-        loopRotX = Math.sin(t * 1.8) * 0.03;
-        loopRotZ = 0.12 * (1 - lf); // More dramatic banking
-      } else if (loopP >= 3.0 && loopP < 4.5) {
-        // Extended dock rotation with "mission complete" feel
-        const lf = (loopP - 3.0) / 1.5;
-        const le = Math.sin((lf * Math.PI) / 2);
-        loopSx = 0;
-        loopSy = 0.25 + Math.sin(t * 1.5) * 0.08;
-        loopRotY = -Math.PI / 2 * (1 - le);
-        loopRotX = Math.sin(t * 1.5) * 0.03;
-        loopRotZ = Math.cos(t * 2.0) * 0.02; // Gentle celebration wobble
-      } else if (loopP >= 4.5 && loopP < 8.5) {
-        // Extended center assembly hold with "data processing" hover
-        loopSx = 0;
-        loopSy = 0.25 + Math.sin(t * 1.2) * 0.09;
-        loopRotY = Math.sin(t * 0.4) * 0.05; // Slow scanning motion
-        loopRotX = Math.sin(t * 1.2) * 0.03;
-        loopRotZ = Math.cos(t * 1.8) * 0.03; // Processing data wobble
-      } else if (loopP >= 8.5 && loopP < 9.5) {
-        // Enhanced pivot left thruster charge
-        const lf = (loopP - 8.5) / 1.0;
-        const le = lf * lf;
-        loopSx = 0;
-        loopSy = 0.25 - le * 0.2 + Math.sin(t * 3.0) * 0.05;
-        loopRotY = -Math.PI / 2 * le;
-        loopRotX = -0.08 * le; // More dramatic nose-down
-      } else if (loopP >= 9.5 && loopP < 11.0) {
-        // Hyper-acceleration takeoff left with mission complete
-        const lf = (loopP - 9.5) / 1.5;
-        const le = Math.pow(lf, 2.5); // More dramatic acceleration curve
-        loopSx = -le * 18.0; // Faster departure
-        loopSy = 0.05 + le * 1.2 + Math.sin(t * 5.0) * 0.04;
-        loopRotY = -Math.PI / 2;
-        loopRotX = 0.08 * lf;
-        loopRotZ = 0.45 * lf; // More dramatic departure roll
-      } else {
-        // Offscreen cooldown hidden
-        loopSx = -99.0;
-        loopSy = -99.0;
-      }
-
-      // Merge scroll-based positioning into time-driven loop
-      const mergeFactor = THREE.MathUtils.clamp((p - 0.90) / 0.10, 0, 1);
-      sx = THREE.MathUtils.lerp(scrollSx, loopSx, mergeFactor);
-      sy = THREE.MathUtils.lerp(scrollSy, loopSy, mergeFactor);
-      sz = THREE.MathUtils.lerp(scrollSz, loopSz, mergeFactor);
-      
-      sRotX = THREE.MathUtils.lerp(Math.sin(t * 2.0) * 0.03, loopRotX, mergeFactor);
-      sRotY = THREE.MathUtils.lerp(-Math.PI * 0.4, loopRotY, mergeFactor);
-      sRotZ = THREE.MathUtils.lerp(-0.25 * Math.sin(factor * Math.PI * 2), loopRotZ, mergeFactor);
-
-      // Hide ship when time loop puts it far offscreen
-      if (spaceshipRef.current) {
-        if (mergeFactor > 0.99 && loopSx < -50) {
-          spaceshipRef.current.visible = false;
-        } else {
-          spaceshipRef.current.visible = true;
-        }
-      }
-    }
-
-    if (spaceshipRef.current) {
-      spaceshipRef.current.position.set(sx, sy, sz);
-      spaceshipRef.current.rotation.set(sRotX, sRotY, sRotZ);
-    }
-
-    // ──────────────────────────────────────────────────────────────────────────
-    // 4. LASER BEAM RAPID FIRING
-    // ──────────────────────────────────────────────────────────────────────────
-    if (laserRef.current) {
-      const isFiring = p >= 0.08 && p < 0.13;
-      laserRef.current.visible = isFiring;
-
-      if (laserLightRef.current) {
-        laserLightRef.current.intensity = isFiring ? 6 + Math.sin(t * 30) * 3 : 0;
-      }
-
-      if (isFiring) {
-        const burst = (t * 18) % 1;
-        // Fire from ship nose — ship model's front is along -Z in its local space
-        // Get ship's world forward direction from its rotation matrix
-        const shipForward = new THREE.Vector3();
-        if (spaceshipRef.current) {
-          spaceshipRef.current.getWorldDirection(shipForward);
-        }
-        // Nose offset: move 0.25 units in ship's forward direction from ship center
-        const noseX = sx + shipForward.x * 0.25;
-        const noseY = sy + shipForward.y * 0.25;
-        const noseZ = sz + shipForward.z * 0.25;
-        const dx = ax - noseX;
-        const dy = ay - noseY;
-        const dz = az - noseZ;
-        laserRef.current.position.set(noseX + dx * burst, noseY + dy * burst, noseZ + dz * burst);
-        laserRef.current.scale.set(1.0, 1.0, 1.8);
-        const dir = new THREE.Vector3(dx, dy, dz).normalize();
-        const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
-        laserRef.current.setRotationFromQuaternion(quat);
-        if (laserLightRef.current) {
-          laserLightRef.current.position.set(noseX + dx * 0.5, noseY + dy * 0.5, noseZ + dz * 0.5);
-        }
-      }
-    }
-
-    // Explosion: compact burst — core flash + 2 expanding rings
-    // Explosion GLB: show at asteroid destroy point, scale up then fade
+    // 3. Explosion
     const exploding = p >= 0.12 && p < 0.24;
     const ef = THREE.MathUtils.clamp((p - 0.12) / 0.12, 0, 1);
     const EX = ASTEROID_EXPLODE.x, EY = ASTEROID_EXPLODE.y, EZ = ASTEROID_EXPLODE.z;
@@ -480,31 +249,51 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
     if (explosionGroupRef.current) {
       explosionGroupRef.current.visible = exploding;
       if (exploding) {
-        // Pop in fast, hold, then fade — scale drives the "burst" feel
-        const s = ef < 0.3 ? (ef / 0.3) * 0.5 : 0.5;
+        const s = ef < 0.3 ? (ef / 0.3) * 0.55 : 0.55;
         explosionGroupRef.current.scale.setScalar(s);
         explosionGroupRef.current.position.set(EX, EY, EZ);
         explosionGroupRef.current.rotation.y += delta * 0.5;
-        // Fade out by scaling down after peak
         if (ef > 0.5) {
           const fade = 1 - (ef - 0.5) / 0.5;
-          explosionGroupRef.current.scale.setScalar(0.5 * fade);
+          explosionGroupRef.current.scale.setScalar(0.55 * fade);
         }
       }
     }
     if (explosionLightRef.current) {
-      explosionLightRef.current.intensity = exploding ? Math.max(0, (1 - ef) * 25) : 0;
+      explosionLightRef.current.intensity = exploding ? Math.max(0, (1 - ef) * 30) : 0;
       explosionLightRef.current.position.set(EX, EY, EZ);
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // 5. CAMERA IMPACT SHAKE & FLASH
-    // ──────────────────────────────────────────────────────────────────────────
-    const shakeAmt = p > 0.145 && p < 0.22 
-      ? (1 - Math.abs(p - 0.15) / 0.07) * 0.18 : 0;
+    // 4. Impact Particles
+    if (impactParticlesRef.current) {
+      const isExploding = p >= 0.12 && p < 0.24;
+      impactParticlesRef.current.visible = isExploding;
+      if (isExploding) {
+        const posAttr = impactParticlesRef.current.geometry.attributes.position as THREE.BufferAttribute;
+        for (let i = 0; i < 80; i++) {
+          const vx = impactParticlesVel[i * 3];
+          const vy = impactParticlesVel[i * 3 + 1];
+          const vz = impactParticlesVel[i * 3 + 2];
+          posAttr.setXYZ(
+            i,
+            ASTEROID_EXPLODE.x + vx * ef * 1.8,
+            ASTEROID_EXPLODE.y + vy * ef * 1.8,
+            ASTEROID_EXPLODE.z + vz * ef * 1.8
+          );
+        }
+        posAttr.needsUpdate = true;
+        const mat = impactParticlesRef.current.material as THREE.PointsMaterial;
+        mat.opacity = Math.max(0, 1 - ef);
+        mat.size = 0.09 * Math.max(0, 1 - ef * 0.5);
+      }
+    }
+
+    // 5. Camera Shake (Perfect synchronization with foreground)
+    const shakeAmt = p > 0.12 && p < 0.22 
+      ? (1 - Math.abs(p - 0.16) / 0.06) * 0.22 : 0;
       
     if (shakeAmt > 0) {
-      shakeT.current += delta * 70;
+      shakeT.current += delta * 80;
       state.camera.position.x = Math.sin(shakeT.current * 1.8) * shakeAmt;
       state.camera.position.y = Math.cos(shakeT.current * 2.5) * shakeAmt * 0.6;
     } else {
@@ -512,45 +301,29 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
       state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, 0, delta * 8);
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // 6. ASTEROID REMNANTS (Orbiting Debris Rings around Planet)
-    // ──────────────────────────────────────────────────────────────────────────
-    const hasExploded = p >= 0.15;
-    const explodedProgress = THREE.MathUtils.clamp((p - 0.15) / 0.35, 0, 1);
-    
-    // Planet's current position to pivot around
+    // 6. Asteroid Remnants
+    const hasExploded = p >= 0.13;
+    const explodedProgress = THREE.MathUtils.clamp((p - 0.13) / 0.35, 0, 1);
     const planetX = planetRef.current ? planetRef.current.position.x : PLANET_START.x;
     const planetY = planetRef.current ? planetRef.current.position.y : PLANET_START.y;
     const planetZ = planetRef.current ? planetRef.current.position.z : PLANET_START.z;
 
     debrisRefs.current.forEach((dr, i) => {
       if (!dr) return;
-      
-      // Hide debris when we move away from planet (same timing as planet)
       dr.visible = hasExploded && p < 0.45;
-      
       if (hasExploded) {
         const d = DEBRIS_DATA[i];
-        
-        // Circular orbit angles rotating slowly
         const angle = d.phase + (t * d.speed) * 0.8;
-        
-        // Expanded ring coordinates tilted relative to planet
         const rx = Math.cos(angle) * d.radius;
         const rz = Math.sin(angle) * d.radius;
-        const ry = Math.sin(angle) * d.radius * d.inclination; // Slight inclination tilt
-
-        // Spawn blast expansion from impact origin, easing into stable orbit
+        const ry = Math.sin(angle) * d.radius * d.inclination;
         const scaleIn = Math.min(1, explodedProgress * 5);
         const radiusMultiplier = THREE.MathUtils.lerp(0.1, 1.0, Math.sin((explodedProgress * Math.PI) / 2));
-        
-        // Position relative to moving planet
         dr.position.set(
           planetX + rx * radiusMultiplier,
           planetY + ry * radiusMultiplier,
           planetZ + rz * radiusMultiplier
         );
-        
         dr.rotation.x += delta * 1.5;
         dr.rotation.y += delta * 0.8;
         dr.scale.setScalar(d.scale * scaleIn * PLANET_SCALE);
@@ -558,27 +331,22 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
     });
   });
 
-  // Calculate terrain and stardust opacities (fades in as user scrolls to footer)
   const footerFadeProgress = Math.max(0, Math.min(1, (scrollProgress - 0.80) / 0.15));
-  const terrainOpacity = footerFadeProgress * 0.50; // opacity capped at 50% for legibility
+  const terrainOpacity = footerFadeProgress * 0.50;
 
   return (
     <>
-      {/* Lights */}
       <ambientLight intensity={1.8} />
       <pointLight position={[0, 6, 6]} intensity={3.5} color="#c084fc" />
-      <pointLight ref={laserLightRef} position={[0, 0, 2]} intensity={0} color="#8b5cf6" distance={8} />
       <directionalLight position={[4, 5, 5]} intensity={2.5} color="#38bdf8" />
       <directionalLight position={[0, 4, 8]} intensity={3.0} color="#ffffff" />
       
-      {/* 1. Saved Planet */}
       <group ref={planetRef} position={[PLANET_START.x, PLANET_START.y, PLANET_START.z]}>
         <ModelBoundary fallback={<FallbackSphere color="#8b5cf6" size={PLANET_SCALE} />}>
           <GLB path={PLANET} scale={1} />
         </ModelBoundary>
       </group>
 
-      {/* 2. Asteroid */}
       <group ref={asteroidRef} position={[ASTEROID_START.x, ASTEROID_START.y, ASTEROID_START.z]}>
         <ModelBoundary fallback={<FallbackSphere color="#27272a" size={0.35} />}>
           <GLB path={ASTEROID} scale={1} />
@@ -597,12 +365,6 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
         </mesh>
       </group>
 
-      {/* 3. Spaceship */}
-      <group ref={spaceshipRef} position={[-0.6, -0.5, 1.5]} scale={0.07}>
-        <primitive object={shipScene} />
-      </group>
-
-      {/* Explosion GLB */}
       <pointLight ref={explosionLightRef} position={[2.2, 0.5, 1.3]} intensity={0} color="#ff8c3a" distance={8} />
       <group ref={explosionGroupRef} visible={false}>
         <ModelBoundary fallback={<mesh><sphereGeometry args={[0.3,8,8]} /><meshStandardMaterial color="#ff6600" emissive="#ff3300" emissiveIntensity={4} transparent opacity={0.8} /></mesh>}>
@@ -610,29 +372,23 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
         </ModelBoundary>
       </group>
 
-      {/* 4. Violet plasma laser beams */}
-      <group ref={laserRef} visible={false}>
-        {/* Core beam — bright violet */}
-        <mesh position={[-0.06, 0, 0]}>
-          <cylinderGeometry args={[0.018, 0.008, 1.0, 8]} />
-          <meshStandardMaterial color="#8b5cf6" emissive="#7c3aed" emissiveIntensity={8} toneMapped={false} />
-        </mesh>
-        <mesh position={[0.06, 0, 0]}>
-          <cylinderGeometry args={[0.018, 0.008, 1.0, 8]} />
-          <meshStandardMaterial color="#8b5cf6" emissive="#7c3aed" emissiveIntensity={8} toneMapped={false} />
-        </mesh>
-        {/* Outer glow — wide soft halo */}
-        <mesh position={[-0.06, 0, 0]}>
-          <cylinderGeometry args={[0.06, 0.03, 1.0, 8]} />
-          <meshStandardMaterial color="#a78bfa" emissive="#6d28d9" emissiveIntensity={3} transparent opacity={0.25} toneMapped={false} depthWrite={false} />
-        </mesh>
-        <mesh position={[0.06, 0, 0]}>
-          <cylinderGeometry args={[0.06, 0.03, 1.0, 8]} />
-          <meshStandardMaterial color="#a78bfa" emissive="#6d28d9" emissiveIntensity={3} transparent opacity={0.25} toneMapped={false} depthWrite={false} />
-        </mesh>
-      </group>
+      <points ref={impactParticlesRef} visible={false}>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            args={[impactParticlesPos, 3]}
+          />
+        </bufferGeometry>
+        <pointsMaterial
+          color="#06b6d4"
+          size={0.09}
+          transparent
+          opacity={1.0}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </points>
 
-      {/* 5. Orbital Asteroid Remnants (Debris) */}
       {Array.from({ length: DEBRIS_COUNT }).map((_, i) => (
         <group key={`debris-${i}`} ref={(el) => { debrisRefs.current[i] = el; }} visible={false}>
           <ModelBoundary fallback={
@@ -651,7 +407,6 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
         </group>
       ))}
 
-      {/* 6. Footer Terrain & StarDust */}
       <Terrain opacity={terrainOpacity} />
       <StarDust opacity={terrainOpacity} />
 
@@ -660,7 +415,358 @@ function SpaceScene({ scrollProgress }: { scrollProgress: number }) {
   );
 }
 
-// ── Global Canvas Wrap Export ───────────────────────────────────────────────
+// ── Cinematic R3F Foreground Scene Controller ────────────────────────────────
+function ForegroundSpaceScene({ scrollProgress }: { scrollProgress: number }) {
+  const spaceshipRef = useRef<THREE.Group>(null);
+  const thrustersRef = useRef<THREE.Group>(null);
+  const laserRef      = useRef<THREE.Group>(null);
+  const laserLightRef = useRef<THREE.PointLight>(null);
+  
+  const currentScroll = useRef(0);
+  const shakeT = useRef(0);
+  
+  // Preload spaceship animations
+  const { scene: shipScene, animations: shipAnims } = useGLTF(SPACESHIP);
+  const { actions: shipActions } = useAnimations(shipAnims, spaceshipRef);
+
+  useEffect(() => {
+    if (shipActions) {
+      const actionName = Object.keys(shipActions)[0];
+      if (actionName && shipActions[actionName]) {
+        shipActions[actionName]?.play();
+      }
+    }
+  }, [shipActions]);
+
+  // Asteroid explosion center for blasters focus
+  const ASTEROID_EXPLODE = { x: 2.2, y: -0.6, z: 1.3 };
+
+  useFrame((state, delta) => {
+    currentScroll.current = THREE.MathUtils.lerp(currentScroll.current, scrollProgress, 0.08);
+    const p = currentScroll.current;
+    const t = state.clock.getElapsedTime();
+
+    // 1. Camera Shake (Perfect synchronization with background)
+    const shakeAmt = p > 0.12 && p < 0.22 
+      ? (1 - Math.abs(p - 0.16) / 0.06) * 0.22 : 0;
+      
+    if (shakeAmt > 0) {
+      shakeT.current += delta * 80;
+      state.camera.position.x = Math.sin(shakeT.current * 1.8) * shakeAmt;
+      state.camera.position.y = Math.cos(shakeT.current * 2.5) * shakeAmt * 0.6;
+    } else {
+      state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, 0, delta * 8);
+      state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, 0, delta * 8);
+    }
+
+    // 2. Spaceship Scroll Flight Path & Thruster Scale
+    let sx = 0;
+    let sy = 0.4;
+    let sz = 2.0;
+    let sRotX = 0;
+    let sRotY = 0;
+    let sRotZ = 0;
+    let currentScale = 0.07;
+
+    let targetScaleXY = 1.0;
+    let targetScaleZ = 1.0;
+
+    const ax = ASTEROID_EXPLODE.x;
+    const ay = ASTEROID_EXPLODE.y;
+    const az = ASTEROID_EXPLODE.z;
+
+    if (p < 0.20) {
+      if (p < 0.05) {
+        // Idle: bottom-left area, hovering calmly
+        sx = -0.6 + Math.sin(t * 0.9) * 0.06;
+        sy = -0.5 + Math.sin(t * 1.1) * 0.05;
+        sz = 1.5;
+        sRotY = Math.PI * 0.15;
+        sRotX = Math.sin(t * 1.0) * 0.02;
+        sRotZ = Math.cos(t * 0.8) * 0.02;
+
+        targetScaleZ = 0.85 + Math.sin(t * 22) * 0.15;
+        targetScaleXY = 0.9;
+        currentScale = 0.07;
+      } else if (p >= 0.05 && p < 0.16) {
+        // Active intercept engines thrust flare
+        const interceptF = THREE.MathUtils.clamp((p - 0.05) / 0.11, 0, 1);
+        const interceptE = 1 - Math.pow(1 - interceptF, 2);
+        sx = THREE.MathUtils.lerp(-0.6, 0.4, interceptE) + Math.sin(t * 0.9) * 0.03;
+        sy = THREE.MathUtils.lerp(-0.5, 0.0, interceptE) + Math.sin(t * 1.1) * 0.03;
+        sz = 1.5;
+        const dx = ax - sx, dy = ay - sy, dz2 = az - sz;
+        sRotY = Math.atan2(dx, dz2);
+        sRotX = -Math.atan2(dy, Math.sqrt(dx * dx + dz2 * dz2)) * 0.5;
+        sRotZ = Math.sin(t * 1.2) * 0.01;
+
+        targetScaleZ = 1.35 + interceptF * 0.6 + Math.sin(t * 30) * 0.15;
+        targetScaleXY = 1.1;
+        currentScale = 0.07;
+      } else {
+        // After firing — ship turns left and flies offscreen left
+        const transitionF = (p - 0.16) / 0.04;
+        const transitionE = transitionF * transitionF; // accelerate offscreen
+        sx = THREE.MathUtils.lerp(0.4, -8.0, transitionE) + Math.sin(t * 0.9) * 0.04 * (1 - transitionF);
+        sy = THREE.MathUtils.lerp(0.0, -1.2, transitionE) + Math.sin(t * 1.1) * 0.04 * (1 - transitionF);
+        sz = THREE.MathUtils.lerp(1.5, 1.8, transitionE);
+        sRotY = -Math.PI * 0.5; // facing left
+        sRotX = Math.sin(t * 1.0) * 0.02 * (1 - transitionF);
+        sRotZ = Math.cos(t * 0.8) * 0.01 * (1 - transitionF);
+
+        targetScaleZ = 0.9 + transitionF * 1.5 + Math.sin(t * 22) * 0.1;
+        targetScaleXY = 0.95 + transitionF * 0.2;
+        currentScale = 0.07;
+      }
+      
+    } else if (p >= 0.20 && p < 0.80) {
+      // PRODUCTS SWOOP: Swoop LEFT-TO-RIGHT DIAGONALLY, sleek scale, aerodynamic banking
+      const factor = (p - 0.20) / 0.60;
+      const eased = factor * factor * (3 - 2 * factor); // smoothstep
+      
+      sx = THREE.MathUtils.lerp(-8.0, 8.0, eased);
+      sy = THREE.MathUtils.lerp(-1.2, 1.2, eased) + Math.sin(factor * Math.PI) * 0.25;
+      sz = 1.8 + Math.sin(factor * Math.PI) * 0.65; // Swoops up to sz = 2.45 (sleek distance, no screen blocking)
+
+      sRotY = Math.PI / 2; // Facing right (flying left-to-right)
+      sRotZ = 0.15 + Math.cos(factor * Math.PI) * 0.1; // pitch up along travel direction
+      sRotX = -0.35 * Math.sin(factor * Math.PI); // Aerodynamic banking wing roll towards camera
+
+      // Heavy active swoop exhaust trails
+      const swoopThrust = 1.5 + Math.sin(factor * Math.PI) * 0.6 + Math.sin(t * 26) * 0.15;
+      targetScaleZ = swoopThrust;
+      targetScaleXY = 1.25;
+
+      // Sleek dynamic scale: peaks at 0.105 in the center (beautiful and realistic!)
+      currentScale = 0.07 + Math.sin(factor * Math.PI) * 0.035;
+      
+    } else if (p >= 0.80 && p < 0.85) {
+      // SMOOTH TRANSITION TO FOOTER: Glides naturally offscreen to the right from top height
+      const factor = (p - 0.80) / 0.05;
+      sx = THREE.MathUtils.lerp(8.0, 15.0, factor);
+      sy = THREE.MathUtils.lerp(1.2, 0.4, factor); // Starts at 1.2 height and slides down to 0.4
+      sz = THREE.MathUtils.lerp(1.8, 2.0, factor);
+      sRotY = THREE.MathUtils.lerp(Math.PI / 2, -Math.PI / 2, factor); // Turn around offscreen to face left
+      sRotZ = 0;
+      sRotX = 0;
+
+      targetScaleZ = 1.0;
+      targetScaleXY = 1.0;
+      currentScale = 0.07;
+      
+    } else {
+      // FOOTER DOCKING & LANDING: Merge with time-based 12-second loop
+      const factor = THREE.MathUtils.clamp((p - 0.85) / 0.15, 0, 1);
+      const eased = factor * factor * (3 - 2 * factor);
+      
+      // Scroll destination coordinate in Footer (center)
+      const scrollSx = THREE.MathUtils.lerp(15.0, 0.0, eased); // start merging from offscreen right
+      const scrollSy = THREE.MathUtils.lerp(0.4, 0.15, eased);
+      const scrollSz = THREE.MathUtils.lerp(2.0, 2.0, eased);
+      
+      const cycle = 12;
+      const loopP = t % cycle;
+      
+      let loopSx = 0;
+      let loopSy = 0.25;
+      let loopSz = 2.0;
+      let loopRotX = 0;
+      let loopRotY = -Math.PI / 2;
+      let loopRotZ = 0;
+
+      let loopScaleZ = 1.0;
+      let loopScaleXY = 1.0;
+      
+      if (loopP < 3.0) {
+        // Cruise-in from right
+        const lf = loopP / 3.0;
+        const le = 1 - Math.pow(1 - lf, 3);
+        loopSx = 15.0 - le * 15.0;
+        loopSy = 0.4 + Math.sin(t * 1.8) * 0.06;
+        loopRotY = -Math.PI / 2;
+        loopRotX = Math.sin(t * 1.8) * 0.03;
+        loopRotZ = 0.12 * (1 - lf);
+        loopScaleZ = 1.35 + Math.sin(t * 25) * 0.12;
+        loopScaleXY = 1.1;
+      } else if (loopP >= 3.0 && loopP < 4.5) {
+        // Dock rotation
+        const lf = (loopP - 3.0) / 1.5;
+        const le = Math.sin((lf * Math.PI) / 2);
+        loopSx = 0;
+        loopSy = 0.25 + Math.sin(t * 1.5) * 0.08;
+        loopRotY = -Math.PI / 2 * (1 - le);
+        loopRotX = Math.sin(t * 1.5) * 0.03;
+        loopRotZ = Math.cos(t * 2.0) * 0.02;
+        loopScaleZ = THREE.MathUtils.lerp(1.35, 0.45, le) + Math.sin(t * 12) * 0.05;
+        loopScaleXY = THREE.MathUtils.lerp(1.1, 0.8, le);
+      } else if (loopP >= 4.5 && loopP < 8.5) {
+        // Center assembly hold hover
+        loopSx = 0;
+        loopSy = 0.25 + Math.sin(t * 1.2) * 0.09;
+        loopRotY = Math.sin(t * 0.4) * 0.05;
+        loopRotX = Math.sin(t * 1.2) * 0.03;
+        loopRotZ = Math.cos(t * 1.8) * 0.03;
+        loopScaleZ = 0.45 + Math.sin(t * 12) * 0.08;
+        loopScaleXY = 0.8;
+      } else if (loopP >= 8.5 && loopP < 9.5) {
+        // Pivot left thruster charge
+        const lf = (loopP - 8.5) / 1.0;
+        const le = lf * lf;
+        loopSx = 0;
+        loopSy = 0.25 - le * 0.2 + Math.sin(t * 3.0) * 0.05;
+        loopRotY = -Math.PI / 2 * le;
+        loopRotX = -0.08 * le;
+        loopScaleZ = 0.45 + le * 1.65 + Math.sin(t * 40) * 0.12;
+        loopScaleXY = 0.8 + le * 0.55;
+      } else if (loopP >= 9.5 && loopP < 11.0) {
+        // Hyper-acceleration takeoff left (igniting warp speed!)
+        const lf = (loopP - 9.5) / 1.5;
+        const le = Math.pow(lf, 2.5);
+        loopSx = -le * 18.0;
+        loopSy = 0.05 + le * 1.2 + Math.sin(t * 5.0) * 0.04;
+        loopRotY = -Math.PI / 2;
+        loopRotX = 0.08 * lf;
+        loopRotZ = 0.45 * lf;
+        loopScaleZ = 2.1 + lf * 2.1 + Math.sin(t * 55) * 0.18;
+        loopScaleXY = 1.35 + lf * 0.25;
+      } else {
+        // Offscreen cooldown hidden
+        loopSx = -99.0;
+        loopSy = -99.0;
+        loopScaleZ = 0;
+        loopScaleXY = 0;
+      }
+
+      // Merge scroll-based positioning into time-driven loop
+      const mergeFactor = THREE.MathUtils.clamp((p - 0.90) / 0.10, 0, 1);
+      sx = THREE.MathUtils.lerp(scrollSx, loopSx, mergeFactor);
+      sy = THREE.MathUtils.lerp(scrollSy, loopSy, mergeFactor);
+      sz = THREE.MathUtils.lerp(scrollSz, loopSz, mergeFactor);
+      
+      sRotX = THREE.MathUtils.lerp(Math.sin(t * 2.0) * 0.03, loopRotX, mergeFactor);
+      sRotY = THREE.MathUtils.lerp(-Math.PI * 0.4, loopRotY, mergeFactor);
+      const factorSwoop = (p - 0.20) / 0.60;
+      sRotZ = THREE.MathUtils.lerp(-0.25 * Math.sin(factorSwoop * Math.PI * 2), loopRotZ, mergeFactor);
+
+      targetScaleZ = THREE.MathUtils.lerp(1.2, loopScaleZ, mergeFactor);
+      targetScaleXY = THREE.MathUtils.lerp(1.0, loopScaleXY, mergeFactor);
+      currentScale = 0.07;
+    }
+
+    // Control visibility and positioning
+    if (spaceshipRef.current) {
+      const isOffscreenInFooter = p >= 0.85 && sx < -50;
+      spaceshipRef.current.visible = !isOffscreenInFooter;
+      spaceshipRef.current.position.set(sx, sy, sz);
+      spaceshipRef.current.rotation.set(sRotX, sRotY, sRotZ);
+      spaceshipRef.current.scale.setScalar(currentScale);
+    }
+
+    if (thrustersRef.current) {
+      thrustersRef.current.scale.set(targetScaleXY, targetScaleXY, targetScaleZ);
+    }
+
+    // 3. Firing Lasers
+    if (laserRef.current) {
+      const isFiring = p >= 0.08 && p < 0.13;
+      laserRef.current.visible = isFiring;
+
+      if (laserLightRef.current) {
+        laserLightRef.current.intensity = isFiring ? 8 + Math.sin(t * 40) * 4 : 0;
+      }
+
+      if (isFiring) {
+        const burst = (t * 22) % 1;
+        const shipForward = new THREE.Vector3();
+        if (spaceshipRef.current) {
+          spaceshipRef.current.getWorldDirection(shipForward);
+        }
+        
+        const noseX = sx + shipForward.x * 0.25;
+        const noseY = sy + shipForward.y * 0.25;
+        const noseZ = sz + shipForward.z * 0.25;
+        const dx = ax - noseX;
+        const dy = ay - noseY;
+        const dz = az - noseZ;
+        
+        laserRef.current.position.set(noseX + dx * burst, noseY + dy * burst, noseZ + dz * burst);
+        laserRef.current.scale.set(1.0, 1.0, 1.8);
+        const dir = new THREE.Vector3(dx, dy, dz).normalize();
+        const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+        laserRef.current.setRotationFromQuaternion(quat);
+        if (laserLightRef.current) {
+          laserLightRef.current.position.set(noseX + dx * 0.5, noseY + dy * 0.5, noseZ + dz * 0.5);
+        }
+      }
+    }
+  });
+
+  return (
+    <>
+      <ambientLight intensity={1.8} />
+      <directionalLight position={[4, 5, 5]} intensity={2.5} color="#38bdf8" />
+      <directionalLight position={[0, 4, 8]} intensity={3.0} color="#ffffff" />
+      <pointLight ref={laserLightRef} position={[0, 0, 2]} intensity={0} color="#06b6d4" distance={8} />
+
+      <group ref={spaceshipRef} position={[-0.6, -0.5, 1.5]} scale={0.07}>
+        <primitive object={shipScene} />
+        {/* Twin thruster flames */}
+        <group ref={thrustersRef}>
+          {/* Left Engine Plume */}
+          <group position={[-0.15, 0.02, 0.48]} rotation={[-Math.PI / 2, 0, 0]}>
+            <mesh>
+              <cylinderGeometry args={[0.038, 0.0, 0.6, 8]} />
+              <meshStandardMaterial color="#06b6d4" emissive="#00f0ff" emissiveIntensity={6} transparent opacity={0.6} toneMapped={false} depthWrite={false} />
+            </mesh>
+            <mesh>
+              <cylinderGeometry args={[0.014, 0.0, 0.52, 8]} />
+              <meshBasicMaterial color="#ffffff" toneMapped={false} />
+            </mesh>
+          </group>
+          {/* Right Engine Plume */}
+          <group position={[0.15, 0.02, 0.48]} rotation={[-Math.PI / 2, 0, 0]}>
+            <mesh>
+              <cylinderGeometry args={[0.038, 0.0, 0.6, 8]} />
+              <meshStandardMaterial color="#06b6d4" emissive="#00f0ff" emissiveIntensity={6} transparent opacity={0.6} toneMapped={false} depthWrite={false} />
+            </mesh>
+            <mesh>
+              <cylinderGeometry args={[0.014, 0.0, 0.52, 8]} />
+              <meshBasicMaterial color="#ffffff" toneMapped={false} />
+            </mesh>
+          </group>
+        </group>
+      </group>
+
+      {/* Cyber Blaster lasers */}
+      <group ref={laserRef} visible={false}>
+        <group position={[-0.14, 0, 0]}>
+          <mesh>
+            <cylinderGeometry args={[0.024, 0.024, 1.0, 8]} />
+            <meshStandardMaterial color="#06b6d4" emissive="#06b6d4" emissiveIntensity={3} transparent opacity={0.65} toneMapped={false} depthWrite={false} />
+          </mesh>
+          <mesh>
+            <cylinderGeometry args={[0.008, 0.008, 1.05, 8]} />
+            <meshBasicMaterial color="#ffffff" toneMapped={false} />
+          </mesh>
+        </group>
+        <group position={[0.14, 0, 0]}>
+          <mesh>
+            <cylinderGeometry args={[0.024, 0.024, 1.0, 8]} />
+            <meshStandardMaterial color="#06b6d4" emissive="#06b6d4" emissiveIntensity={3} transparent opacity={0.65} toneMapped={false} depthWrite={false} />
+          </mesh>
+          <mesh>
+            <cylinderGeometry args={[0.008, 0.008, 1.05, 8]} />
+            <meshBasicMaterial color="#ffffff" toneMapped={false} />
+          </mesh>
+        </group>
+      </group>
+
+      <Environment preset="night" />
+    </>
+  );
+}
+
+// ── Global Canvas Wrap Export with Split-Canvas Architecture ─────────────────
 export function SpaceCanvas() {
   const [scrollProgress, setScrollProgress] = useState(0);
 
@@ -673,29 +779,50 @@ export function SpaceCanvas() {
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll(); // Trigger immediately to sync starting state
+    handleScroll();
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-0 w-full h-screen">
-      <Canvas
-        camera={{ position: [0, 0, 4], fov: 55 }}
-        gl={{
-          antialias: true,
-          alpha: true,
-          toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.1,
-        }}
-        dpr={[1, 2]}
-      >
-        <Suspense fallback={null}>
-          <SpaceScene scrollProgress={scrollProgress} />
-        </Suspense>
-      </Canvas>
-      <GlobalLoader />
-    </div>
+    <>
+      {/* Background Canvas: renders BEHIND the layout text/cards */}
+      <div className="fixed inset-0 pointer-events-none z-0 w-full h-screen">
+        <Canvas
+          camera={{ position: [0, 0, 4], fov: 55 }}
+          gl={{
+            antialias: true,
+            alpha: true,
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 1.1,
+           }}
+          dpr={[1, 2]}
+        >
+          <Suspense fallback={null}>
+            <BackgroundSpaceScene scrollProgress={scrollProgress} />
+          </Suspense>
+        </Canvas>
+      </div>
+
+      {/* Foreground Canvas: renders IN FRONT OF the layout cards but under Navbar */}
+      <div className="fixed inset-0 pointer-events-none z-25 w-full h-screen">
+        <Canvas
+          camera={{ position: [0, 0, 4], fov: 55 }}
+          gl={{
+            antialias: true,
+            alpha: true,
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 1.1,
+           }}
+          dpr={[1, 2]}
+        >
+          <Suspense fallback={null}>
+            <ForegroundSpaceScene scrollProgress={scrollProgress} />
+          </Suspense>
+        </Canvas>
+        <GlobalLoader />
+      </div>
+    </>
   );
 }
 
